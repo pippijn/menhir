@@ -1,0 +1,220 @@
+##########################################################################
+#                                                                        #
+#  Menhir                                                                #
+#                                                                        #
+#  François Pottier and Yann Régis-Gianas, INRIA Rocquencourt            #
+#                                                                        #
+#  Copyright 2005 Institut National de Recherche en Informatique et      #
+#  en Automatique. All rights reserved. This file is distributed         #
+#  under the terms of the Q Public License version 1.0, with the         #
+#  change described in file LICENSE.                                     #
+#                                                                        #
+##########################################################################
+
+# This OMakefile is designed for projects that use Objective Caml,
+# ocamllex, and menhir.
+
+# This OMakefile is meant to be included within a host OMakefile
+# that defines the following variables:
+#
+# GENERATED    :  a list of the source (.ml and .mli) files
+#                 that are generated (by invoking ocamllex
+#                 or menhir)
+#
+# MODULES      :  a list of the modules (without extension)
+#                 that should be linked into the executable
+#                 program. Order is significant.
+#
+# EXECUTABLE   :  the base name of the executables that should
+#                 be produced. Suffixes $(BSUFFIX) and $(OSUFFIX)
+#                 will be added to distinguish the bytecode and
+#                 native code versions.
+
+# -------------------------------------------------------------------------
+
+# The host OMakefile can override the following default settings.
+
+# Include directives for compilation and for linking.
+
+if $(not $(defined INCLUDE))
+    INCLUDE          =
+    export
+
+# Bytecode compilation flags.
+
+if $(not $(defined BFLAGS))
+    BFLAGS           = -dtypes -g
+    export
+
+# Native code compilation flags.
+
+if $(not $(defined OFLAGS))
+    OFLAGS           = -dtypes
+    export
+
+# Bytecode link-time flags.
+
+if $(not $(defined BLNKFLAGS))
+    BLNKFLAGS        = -g
+    export
+
+# Native code link-time flags.
+
+if $(not $(defined OLNKFLAGS))
+    OLNKFLAGS        =
+    export
+
+# Lexer generation flags.
+
+if $(not $(defined PGFLAGS))
+    LGFLAGS          = 
+    export
+
+# Parser generation flags.
+
+if $(not $(defined PGFLAGS))
+    PGFLAGS          = --infer -v
+    export
+
+# Suffix appended to the name of the bytecode executable.
+
+if $(not $(defined BSUFFIX))
+    BSUFFIX          = .byte
+    export
+
+# Suffix appended to the name of the native code executable.
+
+if $(not $(defined OSUFFIX))
+    OSUFFIX          =
+    export
+
+# Access paths for the tools.
+
+if $(not $(defined OCAML))
+    OCAML            = ocaml
+    export
+
+if $(not $(defined OCAMLC))
+    if $(which ocamlfind)
+	OCAMLC       = ocamlfind ocamlc
+	export
+    elseif $(which ocamlc.opt)
+	OCAMLC       = ocamlc.opt
+	export
+    else
+	OCAMLC       = ocamlc
+	export
+    export
+
+if $(not $(defined OCAMLOPT))
+    if $(which ocamlfind)
+	OCAMLOPT     = ocamlfind ocamlopt
+	export
+    elseif $(which ocamlopt.opt)
+	OCAMLOPT     = ocamlopt.opt
+	export
+    else
+	OCAMLOPT     = ocamlopt
+	export
+    export
+
+if $(not $(defined OCAMLDEP))
+    if $(which ocamlfind)
+	OCAMLDEP     = ocamlfind ocamldep
+	export
+    elseif $(which ocamldep.opt)
+	OCAMLDEP     = ocamldep.opt
+	export
+    else
+	OCAMLDEP     = ocamldep
+	export
+    export
+
+if $(not $(defined OCAMLDEPWRAPPER))
+    OCAMLDEPWRAPPER  = ./ocamldep.wrapper
+    export
+
+if $(not $(defined OCAMLLEX))
+    OCAMLLEX         = ocamllex
+    export
+
+if $(not $(defined MENHIR))
+    MENHIR           = menhir
+    export
+
+# ----------------------------------------------------------------
+
+# Define an ocamldep wrapper that creates fake generated files so that
+# ocamldep can see that these files exist (or are supposed to exist).
+# This is required to work around ocamldep's brokenness.
+
+WrapScanner(command) =
+    $(OCAML) $(OCAMLDEPWRAPPER) $(GENERATED) - $(command)
+
+# ----------------------------------------------------------------
+
+# Dependencies.
+
+.SCANNER: %.cmi: %.mli
+	WrapScanner($(OCAMLDEP) $<)
+
+.SCANNER: %.cmx %.cmo %.o: %.ml
+	WrapScanner($(OCAMLDEP) $<)
+
+# ----------------------------------------------------------------
+
+# Compilation.
+
+%.cmi: %.mli
+	$(OCAMLC) $(INCLUDE) $(BFLAGS) -c $<
+
+%.cmo: %.ml
+	$(OCAMLC) $(INCLUDE) $(BFLAGS) -c $<
+
+%.cmx %.o: %.ml
+	$(OCAMLOPT) $(INCLUDE) $(OFLAGS) -c $<
+
+%.ml: %.mll
+	$(OCAMLLEX) $(LGFLAGS) $<
+
+# ----------------------------------------------------------------
+
+# Linking.
+
+$(EXECUTABLE)$(OSUFFIX): $(addsuffix .cmx, $(MODULES))
+	$(OCAMLOPT) -o $@ $(INCLUDE) $(OLNKFLAGS) $+
+
+$(EXECUTABLE)$(BSUFFIX): $(addsuffix .cmo, $(MODULES))
+	$(OCAMLC) -o $@ $(INCLUDE) $(BLNKFLAGS) $+
+
+# ----------------------------------------------------------------
+
+# Menhir: multiple file projects.
+
+MenhirMulti(target, sources, options) =
+    TARGETS   = $(file $(target).ml $(target).mli)
+    SOURCES   = $(file $(sources))
+    $(TARGETS): $(SOURCES)
+	$(MENHIR) --ocamlc "$(OCAMLC)" $(PGFLAGS) --base $(target) $(options) $(SOURCES)
+    .SCANNER: $(TARGETS): $(SOURCES)
+	WrapScanner($(MENHIR) --ocamldep "$(OCAMLDEP)" --depend --base $(target) $(options) $(SOURCES))
+
+# Menhir: single file projects.
+
+MenhirMono(target, options) =
+    MenhirMulti($(target), $(target).mly, $(options))
+
+# Menhir: automatic single file projects.
+# This causes every .mly file to be viewed as a single file project.
+
+MenhirAuto() =
+    foreach (target, $(glob *.mly))
+	MenhirMono($(removesuffix $(target)), $(EMPTY))
+
+# ----------------------------------------------------------------
+
+.PHONY: clean
+
+clean:
+    /bin/rm -f $(EXECUTABLE)$(BSUFFIX) $(EXECUTABLE)$(OSUFFIX) $(GENERATED)
+    /bin/rm -f *.cmi *.cmx *.cmo *.o *~ .*~ *.automaton *.conflicts *.annot

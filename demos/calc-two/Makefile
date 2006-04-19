@@ -1,0 +1,21 @@
+##########################################################################
+#                                                                        #
+#  Menhir                                                                #
+#                                                                        #
+#  François Pottier and Yann Régis-Gianas, INRIA Rocquencourt            #
+#                                                                        #
+#  Copyright 2005 Institut National de Recherche en Informatique et      #
+#  en Automatique. All rights reserved. This file is distributed         #
+#  under the terms of the Q Public License version 1.0, with the         #
+#  change described in file LICENSE.                                     #
+#                                                                        #
+##########################################################################
+
+GENERATED       := tokens.ml tokens.mli algebraic.ml algebraic.mli reverse.ml reverse.mli lexer.ml
+MODULES         := algebraic reverse lexer calc
+EXECUTABLE      := calc
+OCAMLDEPWRAPPER := ../ocamldep.wrapper
+include ../Makefile.shared
+$(eval $(call menhir_monomodule,tokens,--only-tokens))
+$(eval $(call menhir_multimodule,algebraic,tokens.mly algebraic.mly,--external-tokens Tokens))
+$(eval $(call menhir_multimodule,reverse,tokens.mly reverse.mly,--external-tokens Tokens))

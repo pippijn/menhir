@@ -1,0 +1,20 @@
+REQUIREMENTS
+
+You need ocaml 3.09 or later and GNU make.
+
+HOW TO INSTALL
+
+Run
+
+  make PREFIX=/usr/local all install
+
+The value of the PREFIX variable can be changed to control where
+the software, the standard library, and the documentation should
+be stored. These files are copied to the following places:
+
+  $PREFIX/bin/
+  $PREFIX/share/menhir/
+  $PREFIX/doc/menhir/
+
+Documentation includes a reference manual and a number of demos.
+

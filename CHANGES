@@ -1,0 +1,18 @@
+2006/03/29:
+Improved conflict reports by factoring out maximal common derivation contexts.
+
+2006/03/28:
+Fixed bug that could arise when explaining a conflict in a non-LALR(1) grammar.
+
+2006/03/27:
+Changed count of reduce/reduce conflicts to allow a comparison with ocamlyacc's diagnostics.
+When refusing to resolve a conflict, report all diagnostics before dying.
+
+2006/03/18:
+Added display of FOLLOW sets when using --log-grammar 2.
+Added --graph option.
+Fixed behavior of --depend option.
+
+2006/01/06:
+Removed reversed lists from the standard library.
+

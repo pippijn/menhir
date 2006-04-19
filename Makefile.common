@@ -1,0 +1,163 @@
+##########################################################################
+#                                                                        #
+#  Menhir                                                                #
+#                                                                        #
+#  François Pottier and Yann Régis-Gianas, INRIA Rocquencourt            #
+#                                                                        #
+#  Copyright 2005 Institut National de Recherche en Informatique et      #
+#  en Automatique. All rights reserved. This file is distributed         #
+#  under the terms of the Q Public License version 1.0, with the         #
+#  change described in file LICENSE.                                     #
+#                                                                        #
+##########################################################################
+
+# -*- Makefile -*- 
+# -------------------------------------------------------------------------
+
+.PHONY: executables clean bootstrap demos
+
+COLD         += clean bootstrap demos
+
+# -------------------------------------------------------------------------
+
+# Compilation flags.
+
+BFLAGS       := -g
+OFLAGS       := -compact
+LNKBFLAGS    := -g unix.cma
+LNKOFLAGS    := unix.cmxa
+PGFLAGS      := -v -lg 1 -la 1 -lc 1 --comment --infer --error-recovery --stdlib .
+
+# -------------------------------------------------------------------------
+
+# A list of the source files that must be generated.
+
+GENERATED    := stdlib.ml lexmli.ml lexer.ml parser.mli parser.ml lineCount.ml lexdep.ml
+
+# -------------------------------------------------------------------------
+
+# A list of the modules that must be linked in.
+
+MODULES      :=								\
+   stringSet stringMap mark compressedBitSet unionFind tarjan patricia	\
+   infiniteArray misc option breadth listMonad dot			\
+   stdlib version settings time positions error				\
+   parameters keyword lineCount printer action parserAux parser lexer	\
+   partialGrammar parameterizedGrammar reachability			\
+   unparameterizedPrinter preFront					\
+   codeBits tokenType interface IO lexmli lexdep infer			\
+   nonTerminalDefinitionInlining front					\
+   grammar item lr0 lr1 lr1partial derivation conflict			\
+   invariant code traverse inliner back
+
+OBJECTS      := $(MODULES:=.cmo)
+XBJECTS      := $(MODULES:=.cmx)
+
+# -------------------------------------------------------------------------
+
+# How to bootstrap.
+
+ONE          := stage-one
+MENHIR       := menhir
+REFERENCE    := reference-parser
+
+# These two really shouldn't be necessary, but there are corner cases
+# where they are needed (e.g. when make is invoked without a target
+# and the .depend file is regenerated).
+
+ifndef PGEN
+  PGEN       := $(CAMLYACC)
+endif
+ifndef PARSER
+  PARSER     := parser
+endif
+
+bootstrap:
+# Build a stage one executable using ocamlyacc.
+	$(MAKE) $(MFLAGS) -s PGEN="$(CAMLYACC)" PARSER=parser EXECUTABLE=$(ONE) executables
+# Remove the ocamlyacc-built parser.
+	@/bin/rm -f parser.ml parser.mli
+# Build a stage two executable using the stage one executable.
+	$(MAKE) $(MFLAGS) -s PGEN="./$(ONE) $(PGFLAGS)" PARSER=fancy-parser EXECUTABLE=$(MENHIR) executables
+# Create a stage three parser and make sure that it is identical.
+	@./$(MENHIR) $(PGFLAGS) -b $(REFERENCE) fancy-parser.mly 2>/dev/null
+	@if diff parser.mli $(REFERENCE).mli 2>&1 >/dev/null ; then \
+	  if diff parser.ml $(REFERENCE).ml 2>&1 >/dev/null ; then \
+	    echo "Bootstrap successful." ; \
+	  else \
+	    echo "Bootstrap FAILED: the implementation files differ." ; \
+          fi ; \
+	else \
+	  echo "Bootstrap FAILED: the interface files differ." ; \
+	fi
+
+# -------------------------------------------------------------------------
+
+# Linking.
+
+executables: $(EXECUTABLE)
+
+$(EXECUTABLE): $(XBJECTS)
+	$(CAMLOPT) -o $(EXECUTABLE) $(LNKOFLAGS) $(XBJECTS)
+
+$(EXECUTABLE).byte: $(OBJECTS)
+	$(CAMLC) -o $(EXECUTABLE).byte $(LNKBFLAGS) $(OBJECTS)
+
+# -------------------------------------------------------------------------
+
+# Computing dependencies. This can be done in a simple way, even though
+# we exploit --infer, because we compile in two stages. Not a good example
+# of how to do it yourself -- have a look at demos/Makefile.shared.
+
+.depend: $(wildcard *.ml *.mli) $(GENERATED)
+	@/bin/rm -f .depend
+	$(CAMLDEP) *.ml *.mli > $@
+
+ifeq ($(findstring $(MAKECMDGOALS),$(COLD)),)
+-include .depend
+endif
+
+# -------------------------------------------------------------------------
+
+# Cleaning up.
+
+clean::
+	/bin/rm -f $(MENHIR).byte $(MENHIR) $(ONE).byte $(ONE)
+	/bin/rm -f *.cmi *.cmx *.cmo *.o *.obj *~ .*~
+	/bin/rm -f $(REFERENCE).ml $(REFERENCE).mli $(GENERATED)
+	/bin/rm -f .depend *.conflicts *.automaton *.annot
+
+# -------------------------------------------------------------------------
+
+# Compiling. The parser source is found in $(PARSER).mly and is processed
+# using $(PGEN).
+
+%.cmi: %.mli
+	$(CAMLC) $(BFLAGS) -c $<
+
+%.cmo: %.ml
+	$(CAMLC) $(BFLAGS) -c $<
+
+%.cmx %.o: %.ml
+	$(CAMLOPT) $(OFLAGS) -c $<
+
+parser.ml parser.mli: $(PARSER).mly
+	@/bin/rm -f parser.ml parser.mli
+	$(PGEN) -b parser $<
+	@/bin/chmod -w parser.ml parser.mli
+
+%.ml: %.mll
+	@/bin/rm -f $@
+	$(CAMLLEX) $<
+	@/bin/chmod -w $@
+
+# -------------------------------------------------------------------------
+
+# Making the demos.
+
+demos:
+	$(MAKE) $(MFLAGS) MENHIR="../../$(MENHIR)" -C demos
+
+clean::
+	$(MAKE) $(MFLAGS) -C demos $@
+
