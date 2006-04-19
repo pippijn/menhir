@@ -1,0 +1,3 @@
+origDir=../upstream
+origUrl=svn+ssh://svn.debian.org/svn/pkg-ocaml-maint/trunk/packages/menhir/upstream
+tagsUrl=svn+ssh://svn.debian.org/svn/pkg-ocaml-maint/tags/packages/menhir
