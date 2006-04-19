@@ -2,7 +2,7 @@ Source: menhir
 Section: devel
 Priority: optional
 Maintainer: Samuel Mimram <smimram@debian.org>
-Build-Depends: debhelper (>= 4.0.0), ocaml-nox (>= 3.09), ocaml-findlib
+Build-Depends: debhelper (>= 4.0.0), dpatch, ocaml-nox (>= 3.09), ocaml-findlib
 Standards-Version: 3.6.2
 
 Package: menhir
@@ -11,10 +11,10 @@ Depends: ocaml-nox (>= 3.09), ${shlibs:Depends}
 Description: Parser generator for OCaml
  Menhir is a LR(1) parser generator for OCaml. It is mostly compatible
  with the standard ocamlyacc and has the following enhancements:
- * it accepts LR(1) grammars,
- * it offers parameterized nonterminal symbols as well as a library of
-   standard definitions,
- * it explains conflicts in terms of the grammar,
- * it allows grammar specifications to be split over multiple files and
-   parametrized by OCaml modules,
- * it produces reentrant parsers.
+  * it accepts LR(1) grammars,
+  * it offers parameterized nonterminal symbols as well as a library of
+    standard definitions,
+  * it explains conflicts in terms of the grammar,
+  * it allows grammar specifications to be split over multiple files and
+    parametrized by OCaml modules,
+  * it produces reentrant parsers.

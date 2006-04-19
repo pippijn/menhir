@@ -1,6 +1,6 @@
 menhir (20060412-1) unstable; urgency=low
 
-  * Initial release Closes: #nnnn  (nnnn is the bug number of your ITP)
+  * Initial release, closes: #363539.
 
  -- Samuel Mimram <smimram@debian.org>  Wed, 19 Apr 2006 19:11:20 +0200
 
