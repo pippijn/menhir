@@ -12,13 +12,16 @@
 # Include dpatch stuff.
 include /usr/share/dpatch/dpatch.make
 
+DESTDIR := $(CURDIR)/debian/menhir
+
 build: build-stamp
 build-stamp: patch-stamp
 	dh_testdir
 	if [ -e /usr/bin/ocamlopt ]; then \
-		$(MAKE); \
+		$(MAKE) menhir; \
 	else \
-		$(MAKE) BEST=byte; \
+		$(MAKE) menhir.byte; \
+		mv menhir.byte menhir; \
 	fi
 	touch build-stamp
 
@@ -37,8 +40,9 @@ install: build
 	dh_clean -k
 	dh_installdirs
 
-	$(MAKE) install PREFIX=$(CURDIR)/debian/menhir/usr
-	rm -rf $(CURDIR)/debian/menhir/usr/doc
+#	$(MAKE) install PREFIX=$(CURDIR)/debian/menhir/usr
+	cp menhir $(DESTDIR)/usr/bin/
+	cp standard.mly $(DESTDIR)/usr/share/menhir/
 
 
 # Build architecture-independent files here.
@@ -53,10 +57,10 @@ binary-arch: build install
 	dh_installdocs
 	dh_installexamples
 	dh_install
-	dh_installman debian/menhir.1
+	dh_installman menhir.1
 	dh_link
 	dh_strip
-	dh_compress
+	dh_compress -X.pdf
 	dh_fixperms
 	dh_installdeb
 	dh_shlibdeps
