@@ -18,8 +18,11 @@
 
   open Lexing
 
-  let fail () =
-    Error.error "failed to make sense of ocamldep's output."
+  let fail lexbuf =
+    Error.error
+      (Printf.sprintf
+	 "failed to make sense of ocamldep's output (character %d)."
+	 lexbuf.lex_curr_p.pos_cnum)
 
 }
 
@@ -27,9 +30,9 @@ let newline = ('\n' | '\r' | "\r\n")
 
 let whitespace = ( ' ' | '\t' | ('\\' newline) )
 
-let identchar = ['A'-'Z' 'a'-'z' '_' '\192'-'\214' '\216'-'\246' '\248'-'\255' '0'-'9']
+let entrychar = [^ '\n' '\r' '\t' ' ' '\\' ':' ]
 
-let entry = ((identchar+ as basename) ".cm" ('i' | 'o' | 'x') as filename)
+let entry = ((entrychar+ as basename) ".cm" ('i' | 'o' | 'x') as filename)
 
 (* [main] recognizes a sequence of lines, where a line consists of an
    entry, followed by a colon, followed by a list of entries. *)
@@ -41,7 +44,7 @@ rule main = parse
     { let bfs = collect [] lexbuf in
       ((basename, filename), bfs) :: main lexbuf }
 | _
-    { fail() }
+    { fail lexbuf }
 
 (* [collect] recognizes a list of entries, separated with spaces and
    ending in a newline. *)
@@ -53,5 +56,5 @@ and collect bfs = parse
     { bfs }
 | _
 | eof
-    { fail() }
+    { fail lexbuf }
 

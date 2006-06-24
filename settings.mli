@@ -26,6 +26,10 @@ type token_type_mode =
 
 val token_type_mode: token_type_mode
 
+(* Whether Pager's algorithm should be used. *)
+
+val pager: bool
+
 (* Whether conflicts should be explained. *)
 
 val explain: bool
@@ -63,10 +67,15 @@ val infer: bool
 
 val inline: bool
 
-(* Whether one should invoke ocamldep in order to compute and
+(* Whether and how one should invoke ocamldep in order to compute and
    display dependencies. *)
 
-val depend: bool
+type ocamldep_mode =
+  | OMNone        (* do not invoke ocamldep *)
+  | OMRaw         (* invoke ocamldep and echo its raw output *)
+  | OMPostprocess (* invoke ocamldep and postprocess its output *)
+
+val depend: ocamldep_mode
 
 (* Whether comments should be printed or discarded. *)
 
@@ -107,3 +116,4 @@ val base: string
 (* The filename of the standard library. *)
 
 val stdlib_filename : string
+

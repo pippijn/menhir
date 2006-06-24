@@ -116,10 +116,12 @@ let explore (state : Lr0.lr1state) : node =
        create a new state: just merge the new state into the
        existing one. This requires reevaluating its successors. *)
 
-    List.iter (fun node ->
-      if Lr0.compatible state node.state then
-	raise (Compatible node)
-    ) similar;
+    if Settings.pager then
+      List.iter (fun node ->
+	if Lr0.compatible state node.state &&
+	   Lr0.eos_compatible state node.state then
+	  raise (Compatible node)
+      ) similar;
 
     (* Otherwise, create a new node. Two states that are in the
        subsumption relation are also compatible. This implies that the
@@ -440,8 +442,7 @@ let () =
     Error.logA 1 (fun f -> Printf.fprintf f "Only %d states remain after resolving shift/reduce conflicts.\n" !num)
 
 let () =
-  Terminal.diagnostics();
-  Production.diagnostics()
+  Grammar.diagnostics()
 
 let n =
   !num
@@ -682,22 +683,23 @@ let default_conflict_resolution () =
       let prods, reductions = TerminalMap.lookup_and_remove Terminal.sharp node.reductions in
       let prod = Misc.single prods in
 
-      (* This node has a reduce action at "#". Determine whether
-	 there exist other actions. If there exist any other
-	 actions, suppress this reduce action. If, furthermore,
-	 some of these actions are shift actions or reduce actions
-	 for another production, signal an ambiguity. *)
+      (* This node has a reduce action at "#". Determine whether there
+	 exist other actions. If there exist any other actions,
+	 suppress this reduce action, and signal an ambiguity.
+
+	 We signal an ambiguity even in the case where all actions at
+	 this node call for reducing a single production. Indeed, in
+	 that case, even though we know that this production must be
+	 reduced, we do not know whether we should first discard the
+	 current token (and call the lexer). *)
 
       let has_ambiguity = ref false in
       let toks = ref TerminalSet.empty in
 
       TerminalMap.iter (fun tok prods ->
-	let prod' = Misc.single prods in
 	node.reductions <- reductions;
-	if prod <> prod' then begin
-	  has_ambiguity := true;
-	  toks := TerminalSet.add tok !toks
-	end
+	has_ambiguity := true;
+	toks := TerminalSet.add tok !toks
       ) reductions;
 
       SymbolMap.iter (fun symbol _ ->

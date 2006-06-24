@@ -11,7 +11,7 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(* $Id: partialGrammar.ml,v 1.60 2005/12/08 16:44:58 fpottier Exp $ *)
+(* $Id: partialGrammar.ml,v 1.61 2006/06/12 13:00:44 regisgia Exp $ *)
 open Misc
 open Syntax
 open Stretch
@@ -171,7 +171,8 @@ let join_declaration filename (grammar : grammar) decl =
 	       nonterminal)
 	with Not_found ->
 	  { grammar with
-            p_types = StringMap.add nonterminal ocamltype grammar.p_types }
+            p_types = StringMap.add nonterminal 
+	      (with_pos (position decl) ocamltype) grammar.p_types  }
       end
 
   (* Token associativity and precedence. *)
@@ -720,7 +721,16 @@ let check_parameterized_grammar_is_well_defined grammar =
 	   (Printf.sprintf 
 	      "the type of the start symbol %s is unspecified." nonterminal);
     ) grammar.p_start_symbols;
-  
+
+  StringMap.iter 
+    (fun symbol ty ->
+       if not (StringMap.mem symbol grammar.p_rules) then
+	 Error.errorp ty 
+	   (Printf.sprintf 
+	      "this is a terminal symbol.\n\
+               %%type declarations are applicable only to nonterminal symbols."))
+    grammar.p_types;
+
   (* Every reference to a symbol is well defined. *)
   let reserved = [ "error" ] in
   let used_tokens = ref StringSet.empty in

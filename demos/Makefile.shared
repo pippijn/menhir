@@ -138,10 +138,10 @@ COLD           += clean
 # Linking.
 
 $(EXECUTABLE)$(OSUFFIX): $(MODULES:=.cmx)
-	$(OCAMLOPT) -o $(EXECUTABLE)$(OSUFFIX) $(INCLUDE) $(OLNKFLAGS) $(MODULES:=.cmx)
+	$(OCAMLOPT) -o $@ $(INCLUDE) $(OLNKFLAGS) $^
 
 $(EXECUTABLE)$(BSUFFIX): $(MODULES:=.cmo)
-	$(OCAMLC) -o $(EXECUTABLE)$(BSUFFIX) $(INCLUDE) $(BLNKFLAGS) $(MODULES:=.cmo)
+	$(OCAMLC) -o $@ $(INCLUDE) $(BLNKFLAGS) $^
 
 # ----------------------------------------------------------------
 

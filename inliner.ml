@@ -114,6 +114,75 @@ let inline ({ valdefs = defs } as p : program) =
 	false
   in
 
+  (* Taking a fresh instance of a type scheme. Ugly. *)
+
+  let instance =
+    let count = ref 0 in
+    let fresh tv =
+      incr count;
+      tv, Printf.sprintf "freshtv%d" !count
+    in
+    fun scheme ->
+      let mapping = List.map fresh scheme.quantifiers in
+      let rec sub typ =
+	match typ with
+	| TypTextual _ ->
+	    typ
+	| TypVar v ->
+	    begin try
+	      TypVar (List.assoc v mapping)
+	    with Not_found ->
+	      typ
+	    end
+	| TypApp (f, typs) ->
+	    TypApp (f, List.map sub typs)
+	| TypTuple typs ->
+	    TypTuple (List.map sub typs)
+	| TypArrow (typ1, typ2) ->
+	    TypArrow (sub typ1, sub typ2)
+      in
+      sub scheme.body
+  in
+
+  (* Destructuring a type annotation. *)
+
+  let rec annotate formals body typ =
+    match formals, typ with
+    | [], _ ->
+	[], EAnnot (body, type2scheme typ)
+    | formal :: formals, TypArrow (targ, tres) ->
+	let formals, body = annotate formals body tres in
+	PAnnot (formal, targ) :: formals, body
+    | _ :: _, _ ->
+	(* Type annotation has insufficient arity. *)
+	assert false
+  in
+
+  (* The heart of the inliner: rewriting a function call to a [let]
+     expression. 
+
+     If there was a type annotation at the function definition site,
+     it is dropped, provided [--infer] was enabled. Otherwise, it is
+     kept, because, due to the presence of [EMagic] expressions in the
+     code, dropping a type annotation could cause an ill-typed program
+     to become apparently well-typed. Keeping a type annotation
+     requires taking a fresh instance of the type scheme, because
+     OCaml doesn't have support for locally and existentially bound
+     type variables. Yuck. *)
+
+  let inline formals actuals body oscheme =
+    assert (List.length actuals = List.length formals);
+    match oscheme with
+    | Some scheme
+      when not Settings.infer ->
+
+	let formals, body = annotate formals body (instance scheme) in
+	mlet formals actuals body
+
+    | _ ->
+	mlet formals actuals body
+  in
+
   (* Look for occurrences of identifiers inside expressions, branches,
      etc. and replace them with their definitions if they have only
      one use site or if their definitions are sufficiently simple. *)
@@ -127,33 +196,34 @@ let inline ({ valdefs = defs } as p : program) =
 	    begin
 	      try
 		let _, def = Hashtbl.find table id in
-		match def with
-		| { valval = EFun (formals, body) }
-		| { valval = EAnnot (EFun (formals, body), _) } ->
 
-		    assert (StringMap.mem id usage);
-		    if StringMap.find id usage = 1 || is_simple_app body then begin
+		let formals, body, oscheme =
+		  match def with
+		  | { valval = EFun (formals, body) } ->
+		      formals, body, None
+		  | { valval = EAnnot (EFun (formals, body), scheme) } ->
+		      formals, body, Some scheme
+		  | { valval = _ } ->
+		      (* Definition is not a function definition.
+			 This should not happen in the kind of code that we
+			 generate. *)
+		      assert false
+		in
 
-		      (* Definition can be inlined, with beta reduction. If
-			 there was a type annotation, it is dropped. *)
+		assert (StringMap.mem id usage);
+		if StringMap.find id usage = 1 || is_simple_app body then
 
-		      assert (List.length actuals = List.length formals);
-		      mlet formals (self#exprs actuals) (EComment (id, self#expr body))
+		  (* Definition can be inlined, with beta reduction. *)
 
-		    end
-		    else begin
+		  inline formals (self#exprs actuals) (EComment (id, self#expr body)) oscheme
 
-		      (* Definition cannot be inlined. *)
-		      enqueue def;
-		      EApp (EVar id, self#exprs actuals)
+		else begin
 
-		    end
+		  (* Definition cannot be inlined. *)
+		  enqueue def;
+		  EApp (EVar id, self#exprs actuals)
 
-		| { valval = _ } ->
-		    (* Definition is not a function definition.
-		       This should not happen in the kind of code that we
-		       generate. *)
-		    assert false
+		end
 
 	      with Not_found ->
 		(* This is not a reference to a known global identifier. *)
@@ -184,7 +254,10 @@ let inline ({ valdefs = defs } as p : program) =
 	| PData _ ->
 	    true
 	| PVar id ->
-	    not (Hashtbl.mem table id)
+	    let ok = not (Hashtbl.mem table id) in
+	    if not ok then
+	      Printf.fprintf stderr "SHADOWED: %s\n%!" id; (* TEMPORARY *)
+	    ok
 	| PTuple pats
 	| POr pats ->
 	    List.for_all self#patok pats

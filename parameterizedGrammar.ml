@@ -585,16 +585,23 @@ let expand p_grammar =
 	 Expansion is not needed. *)
       with Not_found -> Positions.value sym 
   in
+  let start_symbols = StringMap.domain (p_grammar.p_start_symbols) in
   {
     preludes      = p_grammar.p_preludes;
     postludes	  = p_grammar.p_postludes;
     parameters    = p_grammar.p_parameters;
-    start_symbols = StringMap.domain (p_grammar.p_start_symbols);
-    types         = p_grammar.p_types;
+    start_symbols = start_symbols;
+    types         = StringMap.map Positions.value p_grammar.p_types;
     tokens	  = p_grammar.p_tokens;
     rules	  = 
       let closed_rules = StringMap.fold 
 	(fun k prule rules -> 
+	   (* If [k] is a start symbol then it cannot be parameterized. *)
+	   if prule.pr_parameters <> [] && StringSet.mem k start_symbols then
+	     Error.error 
+	       (Printf.sprintf "The start symbol `%s' cannot be parameterized."
+		  k);
+
 	   (* Entry points are the closed non terminals. *)
 	   if prule.pr_parameters = [] then 
 	     StringMap.add k { 

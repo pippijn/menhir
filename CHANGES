@@ -1,3 +1,28 @@
+2006/06/15:
+Fixed --depend to be more lenient when analyzing ocamldep's output.
+Added --raw-depend which transmits ocamldep's output unchanged (for
+use in conjunction with omake).
+
+2006/06/12:
+Fixed bug that would cause --only-preprocess to print %token declarations
+also for pseudo-tokens.
+Fixed bug that caused some precedence declarations to be incorrectly
+reported as useless.
+Improved things so that useless pseudo-tokens now also cause warnings.
+Fixed bug that would cause %type directives for terminal symbols to
+be incorrectly accepted.
+Fixed bug that would occur when a semantic action containing $i keywords
+was %inlined.
+
+2006/05/05:
+Fixed problem that caused some end-of-stream conflicts not to be reported.
+Fixed Pager's compatibility criterion to avoid creating end-of-stream conflicts.
+
+2006/04/21:
+Fixed problem that allowed generating incorrect but apparently well-typed
+Objective Caml code when a semantic action was ill-typed and --infer was
+omitted.
+
 2006/03/29:
 Improved conflict reports by factoring out maximal common derivation contexts.
 

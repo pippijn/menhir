@@ -46,10 +46,14 @@ ifneq ($(findstring install,$(MAKECMDGOALS)),)
   endif
 endif
 
+# TEMPORARY GODIVA and Linux do not agree on the standard paths...
+
 EXECUTABLE      := menhir
 bindir          := ${PREFIX}/bin
-docdir		:= ${PREFIX}/doc/$(EXECUTABLE)
+docdir		:= ${PREFIX}/share/doc/$(EXECUTABLE)
 libdir	        := ${PREFIX}/share/$(EXECUTABLE)
+mandir          := ${PREFIX}/share/man/man1
+MANS            := menhir.1
 DOCS            := manual.pdf demos
 LIBS            := standard.mly
 
@@ -80,14 +84,17 @@ install:
 	mkdir -p $(bindir)
 	mkdir -p $(libdir)
 	mkdir -p $(docdir)
+	mkdir -p $(mandir)
 	install $(EXECUTABLE) $(bindir)
 	install -m 644 $(LIBS) $(libdir)
 	cp -r $(DOCS) $(docdir)
+	cp -r $(MANS) $(mandir)
 
 uninstall:
 	rm -rf $(bindir)/$(EXECUTABLE)
 	rm -rf $(libdir)
 	rm -rf $(docdir)
+	rm -rf $(mandir)
 
 # ----------------------------------------------------------------------------
 # Checking the version of the ocaml compiler.

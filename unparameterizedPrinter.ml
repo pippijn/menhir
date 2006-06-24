@@ -65,7 +65,6 @@ let print_assoc = function
 
 let print_tokens b g = 
   (* Sort tokens wrt precedence. *)
-  (* TEMPORARY BUG tous ceux qui ont la même précédence doivent être affichés sur la MÊME ligne! *)
   let undefined, partition_tokens = 
     StringMap.fold (fun token prop acu ->
       insert acu (token, prop.tk_priority)
@@ -77,9 +76,10 @@ let print_tokens b g =
     ) undefined partition_tokens
   in
   List.iter (fun (token, _) ->
-    let prop = StringMap.find token g.tokens in 
-    Printf.fprintf b "%%token%s %s\n"
-      (Misc.o2s prop.tk_ocamltype print_ocamltype) token
+    let prop = StringMap.find token g.tokens in
+    if prop.tk_is_declared then
+      Printf.fprintf b "%%token%s %s\n"
+	(Misc.o2s prop.tk_ocamltype print_ocamltype) token
   ) ordered_tokens;
 
   ignore (List.fold_left 

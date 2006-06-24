@@ -124,11 +124,6 @@ module Terminal : sig
   val iter: (t -> unit) -> unit
   val fold: (t -> 'a -> 'a) -> 'a -> 'a
 
-  (* This prints diagnostics about precedence declarations that 
-     are never consulted. *)
-
-  val diagnostics: unit -> unit
-
 end
 
 (* ------------------------------------------------------------------------ *)
@@ -305,11 +300,6 @@ module Production : sig
 
   val tabulate: (index -> bool) -> (index -> bool) * int
 
-  (* This prints diagnostics about %prec declarations that are never
-     consulted. *)
-
-  val diagnostics: unit -> unit
-
 end
 
 (* ------------------------------------------------------------------------ *)
@@ -382,4 +372,13 @@ module Precedence : sig
   val reduce_reduce: Production.index -> Production.index -> Production.index option
 
 end
+
+(* ------------------------------------------------------------------------ *)
+(* Diagnostics. *)
+
+(* This function prints diagnostics about precedence declarations that
+   are never consulted. It is called after the automaton is
+   constructed. *)
+
+val diagnostics: unit -> unit
 

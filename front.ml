@@ -28,8 +28,12 @@ let () =
    dependency analysis and stop. *)
 
 let () =
-  if Settings.depend then
-    Infer.depend grammar (* never returns *)
+  match Settings.depend with
+  | Settings.OMRaw
+  | Settings.OMPostprocess ->
+      Infer.depend grammar (* never returns *)
+  | Settings.OMNone ->
+      ()
 
 (* If [--infer] was specified on the command line, perform
    type inference and stop. *)
