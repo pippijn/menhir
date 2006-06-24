@@ -11,7 +11,7 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(* $Id: nonTerminalDefinitionInlining.ml,v 1.11 2006/02/06 13:45:06 regisgia Exp $ *)
+(* $Id: nonTerminalDefinitionInlining.ml,v 1.12 2006/06/12 12:33:14 regisgia Exp $ *)
 open UnparameterizedSyntax
 open ListMonad
 
@@ -132,8 +132,8 @@ let inline grammar =
 		  action = 
 		  Action.compose psym (Action.rename phi pb.action) b.action;
 	      }
-      in
-	List.map inline_branch p.branches >>= expand_branch 
+	  in
+	    List.map inline_branch p.branches >>= expand_branch 
 	  
     with NoInlining -> 
       return b
@@ -153,6 +153,20 @@ let inline grammar =
       mark_as_expanded k { r with branches = r.branches >>= expand_branch }
   in
 
+    (* We check that the %inline rules do not use $i syntax since 
+       expansion of $i is impossible. *)
+  let _ = 
+    StringMap.iter 
+      (fun _ r -> 
+	 if r.inline_flag 
+	   && List.exists (fun b -> Action.use_dollar b.action) r.branches then
+	     Error.errorN r.positions 
+	       (Printf.sprintf 
+		  "You cannot use $i syntax in this branch since its \
+                   definition will be inlined."))
+      grammar.rules
+  in
+
     (* To expand a grammar, we expand all its rules and remove 
        the %inline rules. *)
   let expanded_rules = 
@@ -163,6 +177,7 @@ let inline grammar =
 	 with Not_found -> true)
 	grammar.types
   in
+
     { grammar with 
 	rules = StringMap.filter (fun _ r -> not r.inline_flag) expanded_rules;
 	types = useful_types

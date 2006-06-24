@@ -36,6 +36,9 @@ let codeonly m =
 let version =
   ref false
 
+let pager =
+  ref true
+
 let explain =
   ref false
 
@@ -70,8 +73,13 @@ let infer =
 let inline =
   ref true
 
+type ocamldep_mode =
+  | OMNone        (* do not invoke ocamldep *)
+  | OMRaw         (* invoke ocamldep and echo its raw output *)
+  | OMPostprocess (* invoke ocamldep and postprocess its output *)
+
 let depend =
-  ref false
+  ref OMNone
 
 let code_inlining =
   ref true
@@ -106,7 +114,7 @@ let insert name =
 let options = Arg.align [
   "--base", Arg.Set_string base, "<basename> Specifies a base name for the output file(s)";
   "--comment", Arg.Set comment, " Include comments in the generated code";
-  "--depend", Arg.Set depend, " Invoke ocamldep and display dependencies";
+  "--depend", Arg.Unit (fun () -> depend := OMPostprocess), " Invoke ocamldep and display dependencies";
   "--dump", Arg.Set dump, " Describe the automaton in <basename>.automaton";
   "--error-recovery", Arg.Set recovery, " Attempt recovery by discarding tokens after errors";
   "--explain", Arg.Set explain, " Explain conflicts in <basename>.conflicts";
@@ -118,12 +126,14 @@ let options = Arg.align [
   "--log-grammar", Arg.Set_int logG, "<level> Log information about the grammar";
   "--no-code-inlining", Arg.Clear code_inlining, " (undocumented)";
   "--no-inline", Arg.Clear inline, " Ignore the %inline keyword.";
+  "--no-pager", Arg.Clear pager, " (undocumented)";
   "--no-prefix", Arg.Set noprefix, " (undocumented)";
   "--no-stdlib", Arg.Set no_stdlib, " Do not load the standard library";
   "--ocamlc", Arg.Set_string ocamlc, "<command> Specifies how ocamlc should be invoked";
   "--ocamldep", Arg.Set_string ocamldep, "<command> Specifies how ocamldep should be invoked";
   "--only-preprocess", Arg.Set preprocess_only, " Print a simplified grammar and exit";
   "--only-tokens", Arg.Unit tokentypeonly, " Generate token type definition only, no code";
+  "--raw-depend", Arg.Unit (fun () -> depend := OMRaw), " Invoke ocamldep and echo its raw output";
   "--timings", Arg.Set timings, " Display internal timings";
   "--trace", Arg.Set trace, " Include tracing instructions in the generated code";
   "--stdlib", Arg.Set_string stdlib_path, "<directory> Specify where the standard library lies";
@@ -181,6 +191,9 @@ let filenames =
 
 let token_type_mode =
   !token_type_mode
+
+let pager =
+  !pager
 
 let explain =
   !explain

@@ -336,9 +336,9 @@ let subsume ((k1, toksr1) as state1) ((k2, toksr2) as state2) =
 
 (* This function determines whether two (core-equivalent) states are
    weakly compatible in the sense of Pager. This criterion guarantees
-   that the states can be merged without creating now or later. That
-   is, weak compatibility implies absence of conflicts and is
-   preserved by transitions. *)
+   that the states can be merged without creating conflicts, now or
+   later. That is, weak compatibility implies absence of conflicts and
+   is preserved by transitions. *)
 
 let compatible (k1, toksr1) (k2, toksr2) =
   assert (k1 = k2);
@@ -371,6 +371,51 @@ let compatible (k1, toksr1) (k2, toksr2) =
       loopj 0 && loopi (i+1)
   in
   loopi 0
+
+(* This function determines whether two (core-equivalent) states can
+   be merged without creating an end-of-stream conflict, now or in the
+   future.
+
+   The rule is, if an item appears in one state with the singleton "#"
+   as its lookahead set, then its lookahead set in the other state
+   must contain "#".
+
+   So, either the second lookahead set is also the singleton "#", and
+   no end-of-stream conflict exists, or it is larger, and the second
+   state already contains an end-of-stream conflict.
+
+   Put another way, we do not to merge two lookahead sets when one
+   contains "#" alone and the other does not contain "#".
+
+   I invented this rule to complement Pager's criterion. I believe,
+   but I am not 100% sure, that it does indeed prevent end-of-stream
+   conflicts and that it is stable.
+
+   Thanks to Sébastien Hinderer for reporting the bug caused by the
+   absence of this extra criterion. *)
+
+let eos_compatible  (k1, toksr1) (k2, toksr2) =
+  assert (k1 = k2);
+  let n = Array.length toksr1 in
+  let rec loop i =
+    if i = n then
+      true
+    else
+      let toks1 = toksr1.(i)
+      and toks2 = toksr2.(i) in
+      begin
+	if TerminalSet.mem Terminal.sharp toks1 && TerminalSet.cardinal toks1 = 1 then
+	  (* "#" is alone in one set: it must be a member of the other set. *)
+	  TerminalSet.mem Terminal.sharp toks2
+	else if TerminalSet.mem Terminal.sharp toks2 && TerminalSet.cardinal toks2 = 1 then
+	  (* Symmetric condition. *)
+	  TerminalSet.mem Terminal.sharp toks1
+	else
+	  true
+      end
+      && loop (i+1)
+  in
+  loop 0
 
 (* Union of two states. The two states must have the same core. The
    new state is obtained by pointwise union of the lookahead sets. *)

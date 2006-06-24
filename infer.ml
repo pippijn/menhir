@@ -270,43 +270,58 @@ let depend grammar =
       [ remove mlname; remove mliname; restoreml; restoremli ]
   in
 
-  (* Make sense out of ocamldep's output. *)
-
-  let lexbuf = Lexing.from_string output in
-  let lines : line list = Lexdep.main lexbuf in
-
   (* Echo ocamldep's output. *)
 
   print_string output;
 
-  (* Look for the line that concerns the [.cmo] target, and echo a
-     modified version of this line, where the [.cmo] target is
-     replaced with [.ml] and [.mli] targets, and where the dependency
-     over the [.cmi] file is dropped.
+  (* If [--raw-depend] was specified on the command line, stop here.
+     This option is used by omake, which performs its own
+     postprocessing of [ocamldep]'s output. For normal [make] users,
+     who use [--depend], some postprocessing is required, which is
+     performed below. *)
 
-     In doing so, we assume that the user's [Makefile] supports
-     bytecode compilation, so that it makes sense to request [bar.cmo]
-     to be built, as opposed to [bar.cmx]. This is not optimal, but
-     will do. [camldep] exhibits the same behavior. *)
+  begin match Settings.depend with
+  | Settings.OMNone ->
+      assert false (* we wouldn't be here in the first place *)
+  | Settings.OMRaw ->
+      ()
+  | Settings.OMPostprocess ->
 
-  (* TEMPORARY allow ocamldep to be called with flag -native. *)
+      (* Make sense out of ocamldep's output. *)
 
-  List.iter (fun ((_, target_filename), dependencies) ->
-    if Filename.check_suffix target_filename ".cmo" then
-      let dependencies = List.filter (fun (basename, _) ->
-	basename <> base
-      ) dependencies in
-      if List.length dependencies > 0 then begin
-	Printf.printf "%s.ml %s.mli:" base base;
-	List.iter (fun (basename, filename) ->
-	  Printf.printf " %s" filename
-        ) dependencies;
-	Printf.printf "\n%!"
-      end
-  ) lines;
+      let lexbuf = Lexing.from_string output in
+      let lines : line list = Lexdep.main lexbuf in
+
+      (* Look for the line that concerns the [.cmo] target, and echo a
+	 modified version of this line, where the [.cmo] target is
+	 replaced with [.ml] and [.mli] targets, and where the dependency
+	 over the [.cmi] file is dropped.
+
+	 In doing so, we assume that the user's [Makefile] supports
+	 bytecode compilation, so that it makes sense to request [bar.cmo]
+	 to be built, as opposed to [bar.cmx]. This is not optimal, but
+	 will do. [camldep] exhibits the same behavior. *)
+
+      (* TEMPORARY allow ocamldep to be called with flag -native. *)
+
+      List.iter (fun ((_, target_filename), dependencies) ->
+	if Filename.check_suffix target_filename ".cmo" then
+	  let dependencies = List.filter (fun (basename, _) ->
+	    basename <> base
+	  ) dependencies in
+	  if List.length dependencies > 0 then begin
+	    Printf.printf "%s.ml %s.mli:" base base;
+	    List.iter (fun (basename, filename) ->
+	      Printf.printf " %s" filename
+	    ) dependencies;
+	    Printf.printf "\n%!"
+	  end
+      ) lines
+
+  end;
 
   (* Stop. *)
-  
+
   exit 0
 
 (* ------------------------------------------------------------------------- *)

@@ -17,6 +17,57 @@ open Stretch
 open Positions
 
 (* ------------------------------------------------------------------------ *)
+(* Precedence levels for tokens or pseudo-tokens alike. *)
+
+module TokPrecedence = struct
+
+  (* This set records, on a token by token basis, whether the token's
+     precedence level is ever useful. This allows emitting warnings
+     about useless precedence declarations. *)
+
+  let ever_useful : StringSet.t ref =
+    ref StringSet.empty
+
+  let use id =
+    ever_useful := StringSet.add id !ever_useful
+
+  (* This function is invoked when someone wants to consult a token's
+     precedence level. This does not yet mean that this level is
+     useful, though. Indeed, if it is subsequently compared against
+     [UndefinedPrecedence], it will not allow solving a conflict. So,
+     in addition to the desired precedence level, we return a delayed
+     computation which, when evaluated, records that this precedence
+     level was useful. *)
+
+  let levelip id properties =
+    lazy (use id), properties.tk_priority
+
+  let leveli id = 
+    let properties =
+      try
+	StringMap.find id Front.grammar.tokens
+      with Not_found ->
+	assert false (* well-formedness check has been performed earlier *)
+    in
+    levelip id properties    
+
+  (* This function is invoked after the automaton has been constructed.
+     It warns about unused precedence levels. *)
+
+  let diagnostics () =
+    StringMap.iter (fun id properties ->
+      if not (StringSet.mem id !ever_useful) then
+	match properties.tk_priority with
+	| UndefinedPrecedence ->
+	    ()
+	| PrecedenceLevel (_, _, pos1, pos2) ->
+	    Error.warning2 pos1 pos2
+	      (Printf.sprintf "the precedence level assigned to %s is never useful." id)
+    ) Front.grammar.tokens
+
+end
+
+(* ------------------------------------------------------------------------ *)
 (* Nonterminals. *)
 
 module Nonterminal = struct
@@ -158,23 +209,8 @@ module Terminal = struct
       Printf.fprintf f "Grammar has %d terminal symbols.\n" (n - 2)
     )
 
-  (* This array allows recording, on a token by token basis, whether
-     the token's precedence level is ever useful. This allows
-     emitting warnings about useless precedence declarations. *)
-
-  let precedence_level_ever_useful =
-    Array.make n false
-
-  (* Someone wants to consult [tok]'s precedence level. This does not
-     yet mean that this level is useful, though. Indeed, if it is
-     subsequently compared against [UndefinedPrecedence], it will
-     not allow solving a conflict. So, in addition to the desired
-     precedence level, we return a delayed computation which, when
-     evaluated, will record that this precedence level was useful. *)
-
   let precedence_level tok = 
-    lazy (precedence_level_ever_useful.(tok) <- true),
-    token_properties.(tok).tk_priority
+    TokPrecedence.levelip (print tok) token_properties.(tok)
 
   let associativity tok =
     token_properties.(tok).tk_associativity
@@ -187,17 +223,6 @@ module Terminal = struct
 
   let fold f accu =
     Misc.foldi n f accu
-
-  let diagnostics () =
-    iter (fun tok ->
-      if not precedence_level_ever_useful.(tok) then
-	match token_properties.(tok).tk_priority with
-	| UndefinedPrecedence ->
-	    ()
-	| PrecedenceLevel (_, _, pos1, pos2) ->
-	    Error.warning2 pos1 pos2
-	      (Printf.sprintf "the precedence level assigned to %s is never useful." (print tok))
-    )
 
   (* If a token named [EOF] exists, then it is assumed to represent
      ocamllex's [eof] pattern, which means that the lexer may
@@ -553,48 +578,9 @@ module Production = struct
   let prec_decl_ever_useful =
     Array.make n false
 
-  (* Determining the precedence level of a production. If no %prec
-     declaration was explicitly supplied, it is the precedence level
-     of the rightmost terminal symbol in the production's right-hand
-     side. *)
-
-  let rightmost_terminal prod =
-    Array.fold_left (fun accu symbol ->
-      match symbol with
-      | Symbol.T tok ->
-	  Some tok
-      | Symbol.N _ ->
-	  accu
-    ) None (rhs prod)
-
-  let combine e1 e2 =
-    lazy (Lazy.force e1; Lazy.force e2)
-
-  let shift_precedence prod =
-    let fact1 = lazy (prec_decl_ever_useful.(prod) <- true) in
-    match prec_decl.(prod) with
-    | None -> 
-	begin
-	  match rightmost_terminal prod with
-	  | None ->
-	      fact1,
-	      UndefinedPrecedence
-	  | Some tok ->
-	      let fact2, level = Terminal.precedence_level tok in
-	      combine fact1 fact2, level
-	end
-    | Some id ->
-	try
-	  let properties = StringMap.find (Positions.value id) Front.grammar.tokens in
-	  fact1,
-	  properties.tk_priority
-	  (* TEMPORARY il manque un warning pour un pseudo-token qui serait defini
-	               mais jamais mentionne dans une annotation %prec utile. Le
-	               mecanisme actuel ne s'applique qu'aux vrais tokens. Generaliser
-	               en indexant token_ever_useful par des strings et non des num'eros
-	               de tokens? *)
-	with Not_found ->
-	  assert false (* well-formedness check has been performed earlier *)
+  let consult_prec_decl prod =
+    lazy (prec_decl_ever_useful.(prod) <- true),
+    prec_decl.(prod)
 
   let diagnostics () =
     iterx (fun prod ->
@@ -605,6 +591,47 @@ module Production = struct
 	| Some id ->
 	    Error.warningp id "this %prec declaration is never useful."
     )
+
+  (* Determining the precedence level of a production. If no %prec
+     declaration was explicitly supplied, it is the precedence level
+     of the rightmost terminal symbol in the production's right-hand
+     side. *)
+
+  type production_level =
+    | PNone
+    | PRightmostToken of Terminal.t
+    | PPrecDecl of symbol
+
+  let rightmost_terminal prod =
+    Array.fold_left (fun accu symbol ->
+      match symbol with
+      | Symbol.T tok ->
+	  PRightmostToken tok
+      | Symbol.N _ ->
+	  accu
+    ) PNone (rhs prod)
+
+  let combine e1 e2 =
+    lazy (Lazy.force e1; Lazy.force e2)
+
+  let shift_precedence prod =
+    let fact1, prec_decl = consult_prec_decl prod in
+    let oterminal =
+      match prec_decl with
+      | None ->
+	  rightmost_terminal prod
+      | Some { value = terminal } ->
+	  PPrecDecl terminal
+    in
+    match oterminal with
+    | PNone ->
+	fact1, UndefinedPrecedence
+    | PRightmostToken tok ->
+	let fact2, level = Terminal.precedence_level tok in
+	combine fact1 fact2, level
+    | PPrecDecl id ->
+	let fact2, level = TokPrecedence.leveli id  in
+	combine fact1 fact2, level
 
 end
 
@@ -1018,4 +1045,7 @@ module Precedence = struct
 
 end
   
+let diagnostics () =
+  TokPrecedence.diagnostics();
+  Production.diagnostics()
 

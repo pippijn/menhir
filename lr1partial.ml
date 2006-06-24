@@ -192,7 +192,14 @@ end) = struct
 	 then there should exist a node with a conflict in the
 	 canonical automaton as well. Otherwise, Pager's construction
 	 is incorrect. *)
-      assert false
+      
+      begin
+	Printf.fprintf stderr "** Internal failure (Pager's theorem).\n";
+	Printf.fprintf stderr "** Tokens of interest: %s\n" (TerminalSet.print X.tokens);
+	Printf.fprintf stderr "** Goal state: %d\n" (Lr1.number X.goal);
+	Printf.fprintf stderr "** Please send your grammar to Menhir's developers.\n%!";
+	exit 1
+      end
 
     with Goal (node, tok) ->
       node, tok
