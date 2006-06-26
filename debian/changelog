@@ -1,3 +1,9 @@
+menhir (20060615-2) UNRELEASED; urgency=low
+
+  * NOT RELEASED YET
+
+ -- Samuel Mimram <smimram@debian.org>  Sat, 24 Jun 2006 19:28:39 +0000
+
 menhir (20060615-1) unstable; urgency=low
 
   * New upstream release.
