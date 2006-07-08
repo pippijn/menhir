@@ -1,8 +1,9 @@
-menhir (20060615-2) UNRELEASED; urgency=low
+menhir (20060615.dfsg-1) unstable; urgency=low
 
-  * NOT RELEASED YET
+  * Repackaged upstream's tarball to remove manual.pdf for which we don't have
+    the sources (yet).
 
- -- Samuel Mimram <smimram@debian.org>  Sat, 24 Jun 2006 19:28:39 +0000
+ -- Samuel Mimram <smimram@debian.org>  Sat,  8 Jul 2006 09:24:11 +0000
 
 menhir (20060615-1) unstable; urgency=low
 
