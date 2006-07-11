@@ -1,3 +1,9 @@
+menhir (20060615.dfsg-2) UNRELEASED; urgency=low
+
+  * Added bashim.dpatch to remove bashisms, closes: #377803.
+
+ -- Samuel Mimram <smimram@debian.org>  Tue, 11 Jul 2006 12:26:18 +0000
+
 menhir (20060615.dfsg-1) unstable; urgency=low
 
   * Repackaged upstream's tarball to remove manual.pdf for which we don't have
