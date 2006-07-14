@@ -1,5 +1,6 @@
-menhir (20060615.dfsg-2) UNRELEASED; urgency=low
+menhir (20060615.dfsg-2) unstable; urgency=low
 
+  * Correctly set PREFIX when building, closes: #378260.
   * Added bashim.dpatch to remove bashisms, closes: #377803.
 
  -- Samuel Mimram <smimram@debian.org>  Tue, 11 Jul 2006 12:26:18 +0000

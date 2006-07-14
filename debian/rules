@@ -18,9 +18,9 @@ build: build-stamp
 build-stamp: patch-stamp
 	dh_testdir
 	if [ -e /usr/bin/ocamlopt ]; then \
-		$(MAKE) menhir; \
+		$(MAKE) menhir PREFIX=/usr; \
 	else \
-		$(MAKE) menhir.byte; \
+		$(MAKE) menhir.byte PREFIX=/usr; \
 		mv menhir.byte menhir; \
 	fi
 	touch build-stamp
