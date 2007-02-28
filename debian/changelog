@@ -1,3 +1,12 @@
+menhir (20070215.dfsg-1) experimental; urgency=low
+
+  * New upstream release.
+  * Removed bashism.dpatch, integrated upstream.
+  * Removed manpage, since it is now provided upstream.
+  * Updated standards version to 3.7.2, no changes needed.
+
+ -- Samuel Mimram <smimram@debian.org>  Wed, 28 Feb 2007 19:49:34 +0100
+
 menhir (20060615.dfsg-2) unstable; urgency=low
 
   * Correctly set PREFIX when building, closes: #378260.
@@ -26,4 +35,3 @@ menhir (20060412-1) unstable; urgency=low
   * Initial release, closes: #363539.
 
  -- Samuel Mimram <smimram@debian.org>  Wed, 19 Apr 2006 19:11:20 +0200
-
