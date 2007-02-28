@@ -11,9 +11,12 @@
 (*                                                                        *)
 (**************************************************************************)
 
+(* This is a stripped down version of [GSet] that describes both [Patricia]
+   and [CompressedBitSet]. The full version of [GSet] is in [AlphaLib]. *)
+
 module type S = sig
 
-  (* Elements. *)
+  (* Elements are assumed to have a natural total order. *)
 
   type element
 
@@ -34,14 +37,14 @@ module type S = sig
 
   val singleton: element -> t
 
-  (* [choose s] returns an element of [s] if [s] is nonempty and
-     raises [Not_found] otherwise. *)
-
-  val choose: t -> element
-
   (* [cardinal s] returns the cardinal of [s]. *)
 
   val cardinal: t -> int
+
+  (* [choose s] returns an arbitrarily chosen element of [s], if [s]
+     is nonempty, and raises [Not_found] otherwise. *)
+
+  val choose: t -> element
 
   (* [mem x s] returns [true] if and only if [x] appears in the set
      [s]. *)
@@ -53,14 +56,14 @@ module type S = sig
 
   val add: element -> t -> t
 
+  (* [remove x s] returns a set whose elements are all elements of
+     [s], except [x]. *)
+
+  val remove: element -> t -> t
+
   (* [union s1 s2] returns the union of the sets [s1] and [s2]. *)
 
   val union: t -> t -> t
-
-  (* [remove x s] returns a set whose elements are all elements of [s],
-     except [x]. *) 
-
-  val remove: element -> t -> t
 
   (* [inter s t] returns the set intersection of [s] and [t], that is,
      $s\cap t$. *)
@@ -88,15 +91,19 @@ module type S = sig
 
   val fold: (element -> 'b -> 'b) -> t -> 'b -> 'b
 
+  (* [elements s] is a list of all elements in the set [s]. *)
+
+  val elements: t -> element list
+
   (* [compare] is an ordering over sets. *)
 
   val compare: t -> t -> int
 
-  (* [equal] is equality over sets. *)
+  (* [equal] implements equality over sets. *)
 
   val equal: t -> t -> bool
 
-  (* [subset] is the subset predicate over sets. *)
+  (* [subset] implements the subset predicate over sets. *)
 
   val subset: (t -> t -> bool)
 

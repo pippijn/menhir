@@ -11,7 +11,7 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(* $Id: partialGrammar.ml,v 1.61 2006/06/12 13:00:44 regisgia Exp $ *)
+(* $Id: partialGrammar.ml,v 1.63 2006/10/22 14:07:57 fpottier Exp $ *)
 open Misc
 open Syntax
 open Stretch
@@ -19,68 +19,6 @@ open ConcreteSyntax
 open InternalSyntax
 open Positions
 open Keyword
-
-(* ------------------------------------------------------------------------- *)
-(* Objective Caml's table of keywords, copied from version 3.09. *)
-
-let ocaml_keywords =
-  StringSet.of_list [
-    "and";
-    "as";
-    "assert";
-    "begin";
-    "class";
-    "constraint";
-    "do";
-    "done";
-    "downto";
-    "else";
-    "end";
-    "exception";
-    "external";
-    "false";
-    "for";
-    "fun";
-    "function";
-    "functor";
-    "if";
-    "in";
-    "include";
-    "inherit";
-    "initializer";
-    "lazy";
-    "let";
-    "match";
-    "method";
-    "module";
-    "mutable";
-    "new";
-    "object";
-    "of";
-    "open";
-    "or";
-    "private";
-    "rec";
-    "sig";
-    "struct";
-    "then";
-    "to";
-    "true";
-    "try";
-    "type";
-    "val";
-    "virtual";
-    "when";
-    "while";
-    "with";
-    "mod";
-    "land";
-    "lor";
-    "lxor";
-    "lsl";
-    "lsr";
-    "asr"
-]
 
 (* ------------------------------------------------------------------------- *)
 (* This adds one declaration [decl], as found in file [filename], to
@@ -152,10 +90,6 @@ let join_declaration filename (grammar : grammar) decl =
   (* Start symbols. *)
 
   | DStart nonterminal ->
-      if StringSet.mem nonterminal ocaml_keywords then
-	Error.errorp decl
-	  (Printf.sprintf "%s is an Objective Caml keyword.\n\
-	                   It cannot be the name of a nonterminal start symbol." nonterminal);
       { grammar with
         p_start_symbols = StringMap.add nonterminal decl.position grammar.p_start_symbols }
 

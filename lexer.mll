@@ -151,6 +151,70 @@
     let keyword = Keyword.Position (subject, where, flavor) in
     with_cpos lexbuf keyword
 
+(* Objective Caml's reserved words. *)
+
+let reserved =
+  let table = Hashtbl.create 149 in
+  List.iter (fun word -> Hashtbl.add table word ()) [
+    "and";
+    "as";
+    "assert";
+    "begin";
+    "class";
+    "constraint";
+    "do";
+    "done";
+    "downto";
+    "else";
+    "end";
+    "exception";
+    "external";
+    "false";
+    "for";
+    "fun";
+    "function";
+    "functor";
+    "if";
+    "in";
+    "include";
+    "inherit";
+    "initializer";
+    "lazy";
+    "let";
+    "match";
+    "method";
+    "module";
+    "mutable";
+    "new";
+    "object";
+    "of";
+    "open";
+    "or";
+    "parser";
+    "private";
+    "rec";
+    "sig";
+    "struct";
+    "then";
+    "to";
+    "true";
+    "try";
+    "type";
+    "val";
+    "virtual";
+    "when";
+    "while";
+    "with";
+    "mod";
+    "land";
+    "lor";
+    "lxor";
+    "lsl";
+    "lsr";
+    "asr";
+  ];
+  table
+
 }
 
 let newline = ('\010' | '\013' | "\013\010")
@@ -220,7 +284,13 @@ rule main = parse
 | "+"
     { PLUS }
 | (lowercase identchar *) as id
-    { LID (with_pos (cpos lexbuf) id) }
+    { if Hashtbl.mem reserved id then
+	Error.errorp
+	  (Positions.with_poss (lexeme_start_p lexbuf) (lexeme_end_p lexbuf) ())
+	  "this is an Objective Caml reserved word."
+      else
+	LID (with_pos (cpos lexbuf) id)
+    }
 | (uppercase identchar *) as id
     { UID (with_pos (cpos lexbuf) id) }
 | "//" [^ '\010' '\013']* newline (* skip C++ style comment *)

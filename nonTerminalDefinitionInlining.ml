@@ -11,7 +11,7 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(* $Id: nonTerminalDefinitionInlining.ml,v 1.12 2006/06/12 12:33:14 regisgia Exp $ *)
+(* $Id: nonTerminalDefinitionInlining.ml,v 1.17 2006/06/26 09:41:33 regisgia Exp $ *)
 open UnparameterizedSyntax
 open ListMonad
 
@@ -26,6 +26,21 @@ type 'a color =
 (* Inline a grammar. The resulting grammar does not contain any definitions
    that can be inlined. *)
 let inline grammar = 
+
+  let names producers = 
+    List.fold_left (fun s -> function (_, Some x) -> StringSet.add x s | _ -> s) 
+      StringSet.empty producers 
+  in
+
+  (* This function returns a fresh name beginning with [prefix] and 
+     that is not in the set of names [names]. *)
+  let rec fresh ?(c=0) names prefix =
+    let name = prefix^string_of_int c in
+      if StringSet.mem name names then
+	fresh ~c:(c+1) names prefix
+      else 
+	name
+  in
 
   let use_inline = ref false in
 
@@ -85,20 +100,7 @@ let inline grammar =
   and rename_if_necessary b producers =
 
     (* First we compute the set of names already in use. *)
-    let producers_names = 
-      List.fold_left (fun s -> function (_, Some x) -> StringSet.add x s | _ -> s) 
-	StringSet.empty (b.producers @ producers)
-    in
-
-    (* This function returns a fresh name beginning with [prefix] and 
-       that is not in the set of names [names]. *)
-    let rec fresh ?(c=0) names prefix =
-      let name = prefix^string_of_int c in
-	if StringSet.mem name names then
-	  fresh ~c:(c+1) names prefix
-	else 
-	  name
-    in
+    let producers_names = names (b.producers @ producers) in
 
     (* Compute a renaming and the new inlined producers' names. *)
     let phi, producers' =
@@ -124,13 +126,63 @@ let inline grammar =
 	       "You cannot use %s and the $i syntax in this branch since the \
                definition of %s has to be inlined."
 	       nt nt)
-	else 
+	else 	  
+	  (* Inline a branch of [nt] at position [prefix] ... [suffix] in 
+	     the branch [b]. *)
 	  let inline_branch pb = 
+	    (* Rename the producers of this branch is they conflict with 
+	       the name of the host's producers. *)
 	    let phi, inlined_producers = rename_if_necessary b pb.producers in
+
+	    (* Define the renaming environment given the shape of the branch. *)
+	    let renaming_env, prefix', suffix' = 
+	      
+	      let start_position, prefix' = 
+		match List.rev prefix with 
+
+		  (* If the prefix is empty, the start position is the rule 
+		     start position. *)
+		  | [] -> (Keyword.Left, Keyword.WhereStart), prefix
+		      
+		  (* If the last producer of prefix is unnamed, we cannot refer to 
+		     its position. We give it a name. *)
+		  | (p, None) :: ps -> 
+		      let x = fresh (names (inlined_producers @ prefix @ suffix)) (CodeBits.prefix "p") in
+			(Keyword.RightNamed x, Keyword.WhereEnd), List.rev ((p, Some x) :: ps)
+
+		 (* The last producer of prefix is named [x], 
+		    $startpos in the inlined rule will be changed to $endpos(x). *)
+		 | (_, Some x) :: _ -> (Keyword.RightNamed x, Keyword.WhereEnd), prefix
+
+	      in
+	      (* Same thing for the suffix. *)
+	      let end_position, suffix' = 
+		match suffix with 
+		  | [] -> (Keyword.Left, Keyword.WhereEnd), suffix
+		  | (p, None) :: ps -> 
+		      let x = fresh (names (inlined_producers @ prefix' @ suffix)) (CodeBits.prefix "p") in
+			((Keyword.RightNamed x, Keyword.WhereStart), (p, Some x) :: ps)
+		 | (_, Some x) :: _ -> (Keyword.RightNamed x, Keyword.WhereStart), suffix
+	      in
+		(psym, start_position, end_position), prefix', suffix' 
+	    in
+	    (* Rename the host semantic action. 
+	       Each reference of the inlined non terminal [psym] must be taken into 
+	       account. $startpos(psym) is changed to $startpos(x) where [x] is
+	       the first producer of the inlined branch if it is not empty or
+	       the preceding producer found in the prefix. *)
+	    let outer_action, (used1, used2) = 
+	      Action.rename_inlined_psym renaming_env [] b.action
+	    in
+	    let action', (used1', used2') = 
+	      Action.rename renaming_env phi pb.action 
+	    in
+	    let prefix = if used1 || used1' then prefix' else prefix in
+	    let suffix = if used2 || used2' then suffix' else suffix in
+
 	      { b with
 		  producers = prefix @ inlined_producers @ suffix;
-		  action = 
-		  Action.compose psym (Action.rename phi pb.action) b.action;
+		  action = Action.compose psym action' outer_action
 	      }
 	  in
 	    List.map inline_branch p.branches >>= expand_branch 

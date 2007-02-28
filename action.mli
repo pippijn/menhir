@@ -11,7 +11,7 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(* $Id: action.mli,v 1.6 2005/12/01 16:20:06 regisgia Exp $ *)
+(* $Id: action.mli,v 1.8 2006/06/26 09:41:33 regisgia Exp $ *)
 
 (** Semantic action's type. *)
 type t
@@ -20,9 +20,20 @@ type t
     feature is used during the processing of the %inline keyword. *)
 val compose : string -> t -> t -> t
 
-(** [rename phi a] builds the action [let x1 = x1' and ... xn = xn' in a] if
-    [phi] is [ (x1, x1') ... (xn, xn') ]. *)
-val rename: (string * string) list -> t -> t
+(** [rename renaming_env phi a] builds the action
+    [let x1 = x1' and ... xn = xn' in a] if [phi] is [(x1, x1') ... (xn, xn')].
+    Moreover, [renaming_env] is used to correctly replace $startpos/$endpos
+    present in the semantic action. *)
+val rename:
+  string * (Keyword.subject * Keyword.where) * (Keyword.subject * Keyword.where)
+  -> (string * string) list -> t -> t * (bool * bool)
+
+(** [rename_inlined_psym renaming_env phi a] updates the occurrences of the
+    inlined non terminal in the action [a].
+*)
+val rename_inlined_psym:
+  string * (Keyword.subject * Keyword.where) * (Keyword.subject * Keyword.where)
+  -> (string * string) list -> t -> t * (bool * bool)
 
 (** Semantic actions are translated into [IL] code using the
     [IL.ETextual] and [IL.ELet] constructors. *)

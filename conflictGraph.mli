@@ -11,8 +11,6 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(* The code generator. *)
-
-val program: IL.program
-
+(* This module writes a graph of the conflict states to the
+   .conflicts.dot file. No functionality is offered by this module. *)
 

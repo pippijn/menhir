@@ -357,6 +357,10 @@ let () =
 	 a set of conflict tokens and accept any kind of conflict that
 	 involves one of them. *)
 
+      (* TEMPORARY with the new compatibility criterion, we can be
+	 sure that every conflict token is indeed involved in a
+	 conflict. Exploit that? Avoid focusing on a single token? *)
+
       let module P = Lr1partial.Run (struct
 	let tokens = toks
 	let goal = node
@@ -388,11 +392,7 @@ let () =
 	  "reduce/reduce"
       in
 
-      (* Explain how the conflict state is reached. I say "tokens
-         *possibly* involved" because, due to Pager's merging of
-         states, this is perhaps a superset of the set of tokens
-         that are truly involved in the conflict. The one single
-         token that we focus upon, though, is definitely involved. *)
+      (* Explain how the conflict state is reached. *)
 
       let out = Lazy.force out in
 
@@ -401,7 +401,7 @@ let () =
 	** Token%s involved: %s\n%s\
 	** This state is reached from %s after reading:\n\n%s\n"
       kind (Lr1.number node)
-      (if TerminalSet.cardinal toks > 1 then "s possibly" else "")
+      (if TerminalSet.cardinal toks > 1 then "s" else "")
       (TerminalSet.print toks)
       (if TerminalSet.cardinal toks > 1 then
 	Printf.sprintf "** The following explanations concentrate on token %s.\n" (Terminal.print P.token)

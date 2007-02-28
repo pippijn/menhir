@@ -32,6 +32,12 @@ open Grammar
 
 type node
 
+module Node : Set.OrderedType with type t = node
+
+module NodeSet : Set.S with type elt = node
+
+module NodeMap : Map.S with type key = node
+
 (* These are the automaton's entry nodes. *)
 
 val entry: node array

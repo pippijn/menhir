@@ -47,7 +47,7 @@ MODULES      :=								\
    unparameterizedPrinter preFront					\
    codeBits tokenType interface IO lexmli lexdep infer			\
    nonTerminalDefinitionInlining front					\
-   grammar item lr0 lr1 lr1partial derivation conflict			\
+   grammar item lr0 lr1 lr1partial derivation conflict		        \
    invariant code traverse inliner back
 
 OBJECTS      := $(MODULES:=.cmo)

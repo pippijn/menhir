@@ -117,3 +117,29 @@ let arrowif flag typ body : typ =
 let marrow typs body : typ =
   List.fold_right arrow typs body
 
+(* ------------------------------------------------------------------------ *)
+(* Here is a bunch of naming conventions. Our names are chosen to minimize
+   the likelihood that a name in a semantic action is captured. In other
+   words, all global definitions as well as the parameters to [reduce]
+   are given far-fetched names, unless [--no-prefix] was specified. Note
+   that the prefix must begin with '_'. This allows avoiding warnings
+   about unused variables with ocaml 3.09 and later. *)
+
+let prefix name =
+  if Settings.noprefix then
+    name
+  else
+    "_menhir_" ^ name
+
+let dataprefix name =
+  if Settings.noprefix then
+    name
+  else
+    "Menhir" ^ name
+
+let tvprefix name =
+  if Settings.noprefix then
+    name
+  else
+    "ttv_" ^ name
+

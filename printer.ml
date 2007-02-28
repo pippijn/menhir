@@ -278,7 +278,8 @@ let rec exprlet k pes f e2 =
       (* TEMPORARY current ocaml does not support type schemes here; drop quantifiers, if any *)
       fprintf f "let %s : %a = %a in%t%a" id1 typ ts1.body (* scheme ts1 *) expr e1 nl (exprlet k pes) e2
   | (PVar id1, EFun (ps1, e1)) :: pes ->
-      fprintf f "let %s%a = %a in%t%t%a" id1 (list pat0 space) ps1 (indent 2 expr) e1 nl nl (exprlet k pes) e2
+      fprintf f "let %s%a = %a in%t%t%a" 
+	id1 (list pat0 space) ps1 (indent 2 expr) e1 nl nl (exprlet k pes) e2
   | (p1, (ELet _ as e1)) :: pes ->
       fprintf f "let %a =%a%tin%t%a" pat p1 (indent 2 expr) e1 nl nl (exprlet k pes) e2
   | (p1, e1) :: pes ->

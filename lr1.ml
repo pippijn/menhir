@@ -58,6 +58,18 @@ type node = {
 
   }
 
+module Node = struct
+  type t = node
+  let compare node1 node2 =
+    node1.number - node2.number
+end
+
+module NodeSet =
+  Set.Make (Node)
+
+module NodeMap =
+  Map.Make (Node)
+
 (* ------------------------------------------------------------------------ *)
 (* Construction of the automaton. *)
 

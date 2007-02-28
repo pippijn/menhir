@@ -147,6 +147,17 @@ module Make (X : Endianness.S) = struct
   let empty =
     Empty
 
+  (* [choose m] returns an arbitrarily chosen binding in [m], if [m]
+     is nonempty, and raises [Not_found] otherwise. *)
+
+  let rec choose = function
+    | Empty ->
+	raise Not_found
+    | Leaf (key, data) ->
+	key, data
+    | Branch (_, _, tree0, _) ->
+	choose tree0
+
   (* [lookup k m] looks up the value associated to the key [k] in the map [m], and raises [Not_found] if no value is
      bound to [k].
 
@@ -165,6 +176,19 @@ module Make (X : Endianness.S) = struct
 	  raise Not_found
     | Branch (_, mask, tree0, tree1) ->
 	lookup key (if (key land mask) = 0 then tree0 else tree1)
+
+  let find =
+    lookup
+
+  (* [mem k m] tells whether the key [k] appears in the domain of the
+     map [m]. *)
+
+  let mem k m =
+    try
+      let _ = lookup k m in
+      true
+    with Not_found ->
+      false
 
   (* The auxiliary function [join] merges two trees in the simple case where their prefixes disagree.
 
@@ -332,6 +356,9 @@ module Make (X : Endianness.S) = struct
 	  | data, tree1 ->
 	      data, Branch (prefix, mask, tree0, tree1)
 
+  let find_and_remove =
+    lookup_and_remove
+
   (* [fine_union decide m1 m2] returns the union of the maps [m1] and
      [m2]. If a key [k] is bound to [x1] (resp. [x2]) within [m1]
      (resp. [m2]), then [decide] is called. It is passed [x1] and
@@ -398,9 +425,7 @@ module Make (X : Endianness.S) = struct
     union m1 m2
 
   (* [union m1 m2] returns the union of the maps [m1] and
-     [m2]. Bindings in [m2] take precedence over those in [m1]. The
-     operation returns [m2] itself (as opposed to a copy of it) when
-     its result is equal to [m2]. *)
+     [m2]. Bindings in [m2] take precedence over those in [m1]. *)
 
   let union m1 m2 =
     fine_union (fun d d' -> d') m1 m2
@@ -493,547 +518,604 @@ module Make (X : Endianness.S) = struct
 	else
 	  Branch (p, m, tree0', tree1')
 
-(*i --------------------------------------------------------------------------------------------------------------- i*)
-(*s \mysection{Patricia-tree-based sets} *)
+  (* [iterator m] returns a stateful iterator over the map [m]. *)
 
-  (* To enhance code sharing, it would be possible to implement maps as sets of pairs, or (vice-versa) to implement
-     sets as maps to the unit element. However, both possibilities introduce some space and time inefficiency. To
-     avoid it, we define each structure separately. *)
+  (* TEMPORARY performance could be improved, see JCF's paper *)
 
-  module Domain = struct
+  let iterator m =
 
-    type element = int
+    let remainder = ref [ m ] in
 
-    type t =
-      | Empty
-      | Leaf of int
-      | Branch of int * X.mask * t * t
-
-    (* The empty set. *)
-
-    let empty =
-      Empty
-
-    (* [is_empty s] returns [true] if and only if the set [s] is empty. *)
-
-    let is_empty = function
-      | Empty ->
-	  true
-      | Leaf _
-      | Branch _ ->
-	  false
-
-    (* [singleton x] returns a set whose only element is [x]. *)
-
-    let singleton x =
-      Leaf x
-
-    (* [is_singleton s] returns [Some x] if [s] is a singleton
-       containing [x] as its only element; otherwise, it returns
-       [None]. *)
-
-    let is_singleton = function
-      | Leaf x ->
-	  Some x
-      | Empty
-      |	Branch _ ->
+    let rec next () =
+      match !remainder with
+      | [] ->
 	  None
-
-    (* [choose s] returns an element of [s] if [s] is nonempty and
-       raises [Not_found] otherwise. *)
-
-    let rec choose = function
-      | Leaf x ->
-	  x
-      | Empty ->
-	  raise Not_found
-      | Branch (_, _, tree0, _) ->
-	  choose tree0
-
-    (* [cardinal s] returns [s]'s cardinal. *)
-
-    let rec cardinal = function
-      | Empty ->
-	  0
-      | Leaf _ ->
-	  1
-      | Branch (_, _, t0, t1) ->
-	  cardinal t0 + cardinal t1
-
-    (* [mem x s] returns [true] if and only if [x] appears in the set [s]. *)
-
-    let rec mem x = function
-      | Empty ->
-	  false
-      | Leaf x' ->
-	  x = x'
-      | Branch (_, mask, tree0, tree1) ->
-	  mem x (if (x land mask) = 0 then tree0 else tree1)
-
-    (* The auxiliary function [join] merges two trees in the simple case where their prefixes disagree. *)
-
-    let join p0 t0 p1 t1 =
-      let m = X.branching_bit p0 p1 in
-      let p = X.mask p0 (* for instance *) m in
-      if (p0 land m) = 0 then
-	Branch(p, m, t0, t1)
-      else
-	Branch(p, m, t1, t0)
-
-    (* [add x s] returns a set whose elements are all elements of [s], plus [x]. *)
-
-    exception Unchanged
-
-    let rec strict_add x t =
-      match t with
-      | Empty ->
-	  Leaf x
-      | Leaf x0 ->
-	  if x = x0 then
-	    raise Unchanged
-	  else
-	    join x (Leaf x) x0 t
-      | Branch (p, m, t0, t1) ->
-	  if match_prefix x p m then
-	    if (x land m) = 0 then Branch (p, m, strict_add x t0, t1)
-	    else Branch (p, m, t0, strict_add x t1)
-	  else
-	    join x (Leaf x) p t
-
-    let add x s =
-      try
-	strict_add x s
-      with Unchanged ->
-	s
-
-    (* [make2 x y] creates a set whose elements are [x] and [y]. [x] and [y] need not be distinct. *)
-
-    let make2 x y =
-      add x (Leaf y)
-
-    (* [fine_add] does not make much sense for sets of integers. Better warn the user. *)
-
-    type decision = int -> int -> int
-
-    let fine_add decision x s =
-      assert false
-
-    (* [remove x s] returns a set whose elements are all elements of [s], except [x]. *)
-
-    let remove x s =
-
-      let rec strict_remove = function
-	| Empty ->
-	    raise Not_found
-	| Leaf x' ->
-	  if x = x' then
-	    Empty
-	  else
-	    raise Not_found
-	| Branch (prefix, mask, tree0, tree1) ->
-	    if (x land mask) = 0 then
-	      match strict_remove tree0 with
-	      | Empty ->
-		  tree1
-	      | tree0 ->
-		  Branch (prefix, mask, tree0, tree1)
-	    else
-	      match strict_remove tree1 with
-	      | Empty ->
-		  tree0
-	      | tree1 ->
-		  Branch (prefix, mask, tree0, tree1) in
-
-      try
-	strict_remove s
-      with Not_found ->
-	s
-
-    (* [union s1 s2] returns the union of the sets [s1] and [s2]. *)
-
-    let rec union s t =
-      match s, t with
-
-      |	Empty, _ ->
-	  t
-      | (Leaf _ | Branch _), Empty ->
-	  s
-
-      | Leaf x, _ ->
-	  add x t
-      | Branch _, Leaf x ->
-	  add x s
-
-      | Branch(p, m, s0, s1), Branch(q, n, t0, t1) ->
-	  if (p = q) & (m = n) then
-
-	    (* The trees have the same prefix. Merge their sub-trees. *)
-
-	    let u0 = union s0 t0
-	    and u1 = union s1 t1 in
-	    if t0 == u0 && t1 == u1 then t
-	    else Branch(p, m, u0, u1)
-
-	  else if (X.shorter m n) & (match_prefix q p m) then
-
-	    (* [q] contains [p]. Merge [t] with a sub-tree of [s]. *)
-
-	    if (q land m) = 0 then
-	      Branch(p, m, union s0 t, s1)
-	    else
-	      Branch(p, m, s0, union s1 t)
-
-	  else if (X.shorter n m) & (match_prefix p q n) then
-
-	    (* [p] contains [q]. Merge [s] with a sub-tree of [t]. *)
-
-	    if (p land n) = 0 then
-	      let u0 = union s t0 in
-	      if t0 == u0 then t
-	      else Branch(q, n, u0, t1)
-	    else
-	      let u1 = union s t1 in
-	      if t1 == u1 then t
-	      else Branch(q, n, t0, u1)
-
-	  else
-
-	    (* The prefixes disagree. *)
-
-	    join p s q t
-
-    (* [fine_union] does not make much sense for sets of integers. Better warn the user. *)
-
-    let fine_union decision s1 s2 =
-      assert false
-
-    (* [build] is a ``smart constructor''. It builds a [Branch] node with the specified arguments, but ensures
-       that the newly created node does not have an [Empty] child. *)
-
-    let build p m t0 t1 =
-      match t0, t1 with
-      |	Empty, Empty ->
-	  Empty
-      |	Empty, _ ->
-	  t1
-      |	_, Empty ->
-	  t0
-      |	_, _ ->
-	  Branch(p, m, t0, t1)
-
-    (* [diff s t] returns the set difference of [s] and [t], that is, $s\setminus t$. *)
-
-    let rec diff s t =
-      match s, t with
-
-      |	Empty, _
-      |	_, Empty ->
-	  s
-
-      |	Leaf x, _ ->
-	  if mem x t then Empty else s
-      |	_, Leaf x ->
-	  remove x s
-      
-      | Branch(p, m, s0, s1), Branch(q, n, t0, t1) ->
-	  if (p = q) & (m = n) then
-
-	    (* The trees have the same prefix. Compute the differences of their sub-trees. *)
-
-	    build p m (diff s0 t0) (diff s1 t1)
-
-	  else if (X.shorter m n) & (match_prefix q p m) then
-
-	    (* [q] contains [p]. Subtract [t] off a sub-tree of [s]. *)
-
-	    if (q land m) = 0 then
-	      build p m (diff s0 t) s1
-	    else
-	      build p m s0 (diff s1 t)
-
-	  else if (X.shorter n m) & (match_prefix p q n) then
-
-	    (* [p] contains [q]. Subtract a sub-tree of [t] off [s]. *)
-
-	    diff s (if (p land n) = 0 then t0 else t1)
-
-	  else
-
-	    (* The prefixes disagree. *)
-
-	    s
-
-    (* [inter s t] returns the set intersection of [s] and [t], that is, $s\cap t$. *)
-
-    let rec inter s t =
-      match s, t with
-
-      |	Empty, _
-      |	_, Empty ->
-	  Empty
-
-      |	Leaf x, _ ->
-	  if mem x t then s else Empty
-      |	_, Leaf x ->
-	  if mem x s then t else Empty
-      
-      | Branch(p, m, s0, s1), Branch(q, n, t0, t1) ->
-	  if (p = q) & (m = n) then
-
-	    (* The trees have the same prefix. Compute the intersections of their sub-trees. *)
-
-	    build p m (inter s0 t0) (inter s1 t1)
-
-	  else if (X.shorter m n) & (match_prefix q p m) then
-
-	    (* [q] contains [p]. Intersect [t] with a sub-tree of [s]. *)
-
-	    inter (if (q land m) = 0 then s0 else s1) t
-
-	  else if (X.shorter n m) & (match_prefix p q n) then
-
-	    (* [p] contains [q]. Intersect [s] with a sub-tree of [t]. *)
-
-	    inter s (if (p land n) = 0 then t0 else t1)
-
-	  else
-
-	    (* The prefixes disagree. *)
-
-	    Empty
-
-    (* [disjoint s1 s2] returns [true] if and only if the sets [s1] and [s2] are disjoint, i.e. iff their intersection
-       is empty. It is a specialized version of [inter], which uses less space. *)
-
-    exception NotDisjoint
-
-    let disjoint s t =
-
-      let rec inter s t =
-	match s, t with
-
-	| Empty, _
-	| _, Empty ->
-	    ()
-
-	| Leaf x, _ ->
-	    if mem x t then
-	      raise NotDisjoint
-	| _, Leaf x ->
-	    if mem x s then
-	      raise NotDisjoint
-
-	| Branch(p, m, s0, s1), Branch(q, n, t0, t1) ->
-	    if (p = q) & (m = n) then begin
-	      inter s0 t0;
-	      inter s1 t1
-	    end
-	    else if (X.shorter m n) & (match_prefix q p m) then
-	      inter (if (q land m) = 0 then s0 else s1) t
-	    else if (X.shorter n m) & (match_prefix p q n) then
-	      inter s (if (p land n) = 0 then t0 else t1)
-	    else
-	      () in
-
-      try
-	inter s t;
-	true
-      with NotDisjoint ->
-	false
-
-    (* [iter f s] invokes [f x], in turn, for each element [x] of the set [s]. Elements are presented to [f] according
-       to some unspecified, but fixed, order. *)
-
-    let rec iter f = function
-      | Empty ->
-	  ()
-      | Leaf x ->
-	  f x
-      | Branch (_, _, tree0, tree1) ->
-	  iter f tree0;
-	  iter f tree1
-
-    (* [fold f s seed] invokes [f x accu], in turn, for each element [x] of the set [s]. Elements are presented to [f]
-       according to some unspecified, but fixed, order. The initial value of [accu] is [seed]; then, at each new call,
-       its value is the value returned by the previous invocation of [f]. The value returned by [fold] is the final
-       value of [accu]. In other words, if $s = \{ x_1, x_2, \ldots, x_n \}$, where $x_1 < x_2 < \ldots < x_n$, then
-       [fold f s seed] computes $([f]\,x_n\,\ldots\,([f]\,x_2\,([f]\,x_1\,[seed]))\ldots)$. *)
-
-    let rec fold f s accu =
-      match s with
-      |	Empty ->
-	  accu
-      |	Leaf x ->
-	  f x accu
-      |	Branch (_, _, s0, s1) ->
-	  fold f s1 (fold f s0 accu)
-
-    (* [fold_rev] performs exactly the same job as [fold], but presents elements to [f] in the opposite order. *)
-
-    let rec fold_rev f s accu =
-      match s with
-      | Empty ->
-	  accu
-      | Leaf x ->
-	  f x accu
-      | Branch (_, _, s0, s1) ->
-	  fold_rev f s0 (fold_rev f s1 accu)
-
-    (* [iter2] does not make much sense for sets of integers. Better warn the user. *)
-
-    let rec iter2 f t1 t2 =
-      assert false
-
-    (* [iterator s] returns a stateful iterator over the set [s]. That is, if $s = \{ x_1, x_2, \ldots, x_n \}$, where
-       $x_1 < x_2 < \ldots < x_n$, then [iterator s] is a function which, when invoked for the $k^{\text{th}}$ time,
-       returns [Some]$x_k$, if $k\leq n$, and [None] otherwise. Such a function can be useful when one wishes to
-       iterate over a set's elements, without being restricted by the call stack's discipline.
-
-       For more comments about this algorithm, please see module [Baltree], which defines a similar one. *)
-
-    let iterator s =
-
-      let remainder = ref [ s ] in
-
-      let rec next () =
-	match !remainder with
-	| [] ->
-	    None
-	| Empty :: parent ->
-	    remainder := parent;
-	    next()
-	| (Leaf x) :: parent ->
-	    remainder := parent;
-	    Some x
-	| (Branch(_, _, s0, s1)) :: parent ->
+      | Empty :: parent ->
+	  remainder := parent;
+	  next()
+      | (Leaf (key, data)) :: parent ->
+	  remainder := parent;
+	  Some (key, data)
+      | (Branch(_, _, s0, s1)) :: parent ->
 	  remainder := s0 :: s1 :: parent;
 	  next () in
 
     next
 
-    (* [exists p s] returns [true] if and only if some element of [s] matches the predicate [p]. *)
+  (* If [dcompare] is an ordering over data, then [compare dcompare]
+     is an ordering over maps. *)
 
-    exception Exists
+  exception Got of int
 
-    let exists p s =
-      try
-	iter (fun x ->
-	  if p x then
-	    raise Exists
-	) s;
-	false
-      with Exists ->
-	true
-
-    (* [compare] is an ordering over sets. *)
-
-    exception Got of int
-
-    let compare s1 s2 =
-      let iterator2 = iterator s2 in
-      try
-	iter (fun x1 ->
-	  match iterator2() with
-	  | None ->
-	      raise (Got 1)
-	  | Some x2 ->
-	      let c = x1 - x2 in
-	      if c <> 0 then
-		raise (Got c)
-	) s1;
+  let compare dcompare m1 m2 =
+    let iterator2 = iterator m2 in
+    try
+      iter (fun key1 data1 ->
 	match iterator2() with
 	| None ->
-	    0
-	| Some _ ->
-	    -1
-      with Got c ->
-	c
-
-    (* [equal] implements equality over sets. *)
-
-    let equal s1 s2 =
-      compare s1 s2 = 0
-
-    (* [subset] implements the subset predicate over sets. In other words, [subset s t] returns [true] if and only if
-       $s\subseteq t$. It is a specialized version of [diff]. *)
-
-    exception NotSubset
-
-    let subset s t =
-
-      let rec diff s t =
-	match s, t with
-
-	| Empty, _ ->
-	    ()
-	| _, Empty
-
-	| Branch _, Leaf _ ->
-	    raise NotSubset
-	| Leaf x, _ ->
-	    if not (mem x t) then
-	      raise NotSubset
-
-	| Branch(p, m, s0, s1), Branch(q, n, t0, t1) ->
-
-	    if (p = q) & (m = n) then begin
-
-	      diff s0 t0;
-	      diff s1 t1
-
-	    end
-	    else if (X.shorter n m) & (match_prefix p q n) then
-
-	      diff s (if (p land n) = 0 then t0 else t1)
-
+	    raise (Got 1)
+	| Some (key2, data2) ->
+	    let c = Pervasives.compare key1 key2 in
+	    if c <> 0 then
+	      raise (Got c)
 	    else
+	      let c = dcompare data1 data2 in
+	      if c <> 0 then
+		raise (Got c)
+      ) m1;
+      match iterator2() with
+      | None ->
+	  0
+      | Some _ ->
+	  -1
+    with Got c ->
+      c
 
-	      (* Either [q] contains [p], which means at least one of [s]'s sub-trees is not contained within [t],
-		 or the prefixes disagree. In either case, the subset relationship cannot possibly hold. *)
+(*i --------------------------------------------------------------------------------------------------------------- i*)
+(*s \mysection{Patricia-tree-based sets} *)
 
-	      raise NotSubset in
+(* To enhance code sharing, it would be possible to implement maps as sets of pairs, or (vice-versa) to implement
+   sets as maps to the unit element. However, both possibilities introduce some space and time inefficiency. To
+   avoid it, we define each structure separately. *)
 
-      try
-	diff s t;
+module Domain = struct
+
+  type element = int
+
+  type t =
+    | Empty
+    | Leaf of int
+    | Branch of int * X.mask * t * t
+
+  (* The empty set. *)
+
+  let empty =
+    Empty
+
+  (* [is_empty s] returns [true] if and only if the set [s] is empty. *)
+
+  let is_empty = function
+    | Empty ->
 	true
-      with NotSubset ->
+    | Leaf _
+    | Branch _ ->
 	false
 
-    (* [filter p s] returns the subset of [s] formed by all elements which satisfy the predicate [p]. *)
+  (* [singleton x] returns a set whose only element is [x]. *)
 
-    let filter predicate s =
-      let modified = ref false in
+  let singleton x =
+    Leaf x
 
-      let subset = fold (fun element subset ->
-	if predicate element then
-	  add element subset
-	else begin
-	  modified := true;
-	  subset
-	end
-      ) s Empty in
+  (* [is_singleton s] returns [Some x] if [s] is a singleton
+     containing [x] as its only element; otherwise, it returns
+     [None]. *)
 
-      if !modified then
-	subset
-      else
+  let is_singleton = function
+    | Leaf x ->
+	Some x
+    | Empty
+    |	Branch _ ->
+	None
+
+  (* [choose s] returns an arbitrarily chosen element of [s], if [s]
+     is nonempty, and raises [Not_found] otherwise. *)
+
+  let rec choose = function
+    | Empty ->
+	raise Not_found
+    | Leaf x ->
+	x
+    | Branch (_, _, tree0, _) ->
+	choose tree0
+
+  (* [cardinal s] returns [s]'s cardinal. *)
+
+  let rec cardinal = function
+    | Empty ->
+	0
+    | Leaf _ ->
+	1
+    | Branch (_, _, t0, t1) ->
+	cardinal t0 + cardinal t1
+
+  (* [mem x s] returns [true] if and only if [x] appears in the set [s]. *)
+
+  let rec mem x = function
+    | Empty ->
+	false
+    | Leaf x' ->
+	x = x'
+    | Branch (_, mask, tree0, tree1) ->
+	mem x (if (x land mask) = 0 then tree0 else tree1)
+
+  (* The auxiliary function [join] merges two trees in the simple case where their prefixes disagree. *)
+
+  let join p0 t0 p1 t1 =
+    let m = X.branching_bit p0 p1 in
+    let p = X.mask p0 (* for instance *) m in
+    if (p0 land m) = 0 then
+      Branch(p, m, t0, t1)
+    else
+      Branch(p, m, t1, t0)
+
+  (* [add x s] returns a set whose elements are all elements of [s], plus [x]. *)
+
+  exception Unchanged
+
+  let rec strict_add x t =
+    match t with
+    | Empty ->
+	Leaf x
+    | Leaf x0 ->
+	if x = x0 then
+	  raise Unchanged
+	else
+	  join x (Leaf x) x0 t
+    | Branch (p, m, t0, t1) ->
+	if match_prefix x p m then
+	  if (x land m) = 0 then Branch (p, m, strict_add x t0, t1)
+	  else Branch (p, m, t0, strict_add x t1)
+	else
+	  join x (Leaf x) p t
+
+  let add x s =
+    try
+      strict_add x s
+    with Unchanged ->
+      s
+
+  (* [make2 x y] creates a set whose elements are [x] and [y]. [x] and [y] need not be distinct. *)
+
+  let make2 x y =
+    add x (Leaf y)
+
+  (* [fine_add] does not make much sense for sets of integers. Better warn the user. *)
+
+  type decision = int -> int -> int
+
+  let fine_add decision x s =
+    assert false
+
+  (* [remove x s] returns a set whose elements are all elements of [s], except [x]. *)
+
+  let remove x s =
+
+    let rec strict_remove = function
+      | Empty ->
+	  raise Not_found
+      | Leaf x' ->
+	if x = x' then
+	  Empty
+	else
+	  raise Not_found
+      | Branch (prefix, mask, tree0, tree1) ->
+	  if (x land mask) = 0 then
+	    match strict_remove tree0 with
+	    | Empty ->
+		tree1
+	    | tree0 ->
+		Branch (prefix, mask, tree0, tree1)
+	  else
+	    match strict_remove tree1 with
+	    | Empty ->
+		tree0
+	    | tree1 ->
+		Branch (prefix, mask, tree0, tree1) in
+
+    try
+      strict_remove s
+    with Not_found ->
+      s
+
+  (* [union s1 s2] returns the union of the sets [s1] and [s2]. *)
+
+  let rec union s t =
+    match s, t with
+
+    | Empty, _ ->
+	t
+    | _, Empty ->
 	s
 
-    (* [map f s] computes the image of [s] through [f]. *)
+    | Leaf x, _ ->
+	add x t
+    | _, Leaf x ->
+	add x s
 
-    let map f s =
-      fold (fun element accu ->
-	add (f element) accu
-      ) s Empty
+    | Branch(p, m, s0, s1), Branch(q, n, t0, t1) ->
+	if (p = q) & (m = n) then
 
-    (* [monotone_map] and [endo_map] do not make much sense for sets of integers. Better warn the user. *)
+	  (* The trees have the same prefix. Merge their sub-trees. *)
 
-    let monotone_map f s =
-      assert false
+	  let u0 = union s0 t0
+	  and u1 = union s1 t1 in
+	  if t0 == u0 && t1 == u1 then t
+	  else Branch(p, m, u0, u1)
 
-    let endo_map f s =
-      assert false
+	else if (X.shorter m n) & (match_prefix q p m) then
 
-  end
+	  (* [q] contains [p]. Merge [t] with a sub-tree of [s]. *)
+
+	  if (q land m) = 0 then
+	    Branch(p, m, union s0 t, s1)
+	  else
+	    Branch(p, m, s0, union s1 t)
+
+	else if (X.shorter n m) & (match_prefix p q n) then
+
+	  (* [p] contains [q]. Merge [s] with a sub-tree of [t]. *)
+
+	  if (p land n) = 0 then
+	    let u0 = union s t0 in
+	    if t0 == u0 then t
+	    else Branch(q, n, u0, t1)
+	  else
+	    let u1 = union s t1 in
+	    if t1 == u1 then t
+	    else Branch(q, n, t0, u1)
+
+	else
+
+	  (* The prefixes disagree. *)
+
+	  join p s q t
+
+  (* [fine_union] does not make much sense for sets of integers. Better warn the user. *)
+
+  let fine_union decision s1 s2 =
+    assert false
+
+  (* [build] is a ``smart constructor''. It builds a [Branch] node with the specified arguments, but ensures
+     that the newly created node does not have an [Empty] child. *)
+
+  let build p m t0 t1 =
+    match t0, t1 with
+    |	Empty, Empty ->
+	Empty
+    |	Empty, _ ->
+	t1
+    |	_, Empty ->
+	t0
+    |	_, _ ->
+	Branch(p, m, t0, t1)
+
+  (* [diff s t] returns the set difference of [s] and [t], that is, $s\setminus t$. *)
+
+  let rec diff s t =
+    match s, t with
+
+    |	Empty, _
+    |	_, Empty ->
+	s
+
+    |	Leaf x, _ ->
+	if mem x t then Empty else s
+    |	_, Leaf x ->
+	remove x s
+
+    | Branch(p, m, s0, s1), Branch(q, n, t0, t1) ->
+	if (p = q) & (m = n) then
+
+	  (* The trees have the same prefix. Compute the differences of their sub-trees. *)
+
+	  build p m (diff s0 t0) (diff s1 t1)
+
+	else if (X.shorter m n) & (match_prefix q p m) then
+
+	  (* [q] contains [p]. Subtract [t] off a sub-tree of [s]. *)
+
+	  if (q land m) = 0 then
+	    build p m (diff s0 t) s1
+	  else
+	    build p m s0 (diff s1 t)
+
+	else if (X.shorter n m) & (match_prefix p q n) then
+
+	  (* [p] contains [q]. Subtract a sub-tree of [t] off [s]. *)
+
+	  diff s (if (p land n) = 0 then t0 else t1)
+
+	else
+
+	  (* The prefixes disagree. *)
+
+	  s
+
+  (* [inter s t] returns the set intersection of [s] and [t], that is, $s\cap t$. *)
+
+  let rec inter s t =
+    match s, t with
+
+    | Empty, _
+    | _, Empty ->
+	Empty
+
+    | (Leaf x as s), t
+    | t, (Leaf x as s) ->
+	if mem x t then s else Empty
+
+    | Branch(p, m, s0, s1), Branch(q, n, t0, t1) ->
+	if (p = q) & (m = n) then
+
+	  (* The trees have the same prefix. Compute the intersections of their sub-trees. *)
+
+	  build p m (inter s0 t0) (inter s1 t1)
+
+	else if (X.shorter m n) & (match_prefix q p m) then
+
+	  (* [q] contains [p]. Intersect [t] with a sub-tree of [s]. *)
+
+	  inter (if (q land m) = 0 then s0 else s1) t
+
+	else if (X.shorter n m) & (match_prefix p q n) then
+
+	  (* [p] contains [q]. Intersect [s] with a sub-tree of [t]. *)
+
+	  inter s (if (p land n) = 0 then t0 else t1)
+
+	else
+
+	  (* The prefixes disagree. *)
+
+	  Empty
+
+  (* [disjoint s1 s2] returns [true] if and only if the sets [s1] and [s2] are disjoint, i.e. iff their intersection
+     is empty. It is a specialized version of [inter], which uses less space. *)
+
+  exception NotDisjoint
+
+  let disjoint s t =
+
+    let rec inter s t =
+      match s, t with
+
+      | Empty, _
+      | _, Empty ->
+	  ()
+
+      | Leaf x, _ ->
+	  if mem x t then
+	    raise NotDisjoint
+      | _, Leaf x ->
+	  if mem x s then
+	    raise NotDisjoint
+
+      | Branch(p, m, s0, s1), Branch(q, n, t0, t1) ->
+	  if (p = q) & (m = n) then begin
+	    inter s0 t0;
+	    inter s1 t1
+	  end
+	  else if (X.shorter m n) & (match_prefix q p m) then
+	    inter (if (q land m) = 0 then s0 else s1) t
+	  else if (X.shorter n m) & (match_prefix p q n) then
+	    inter s (if (p land n) = 0 then t0 else t1)
+	  else
+	    () in
+
+    try
+      inter s t;
+      true
+    with NotDisjoint ->
+      false
+
+  (* [iter f s] invokes [f x], in turn, for each element [x] of the set [s]. Elements are presented to [f] according
+     to some unspecified, but fixed, order. *)
+
+  let rec iter f = function
+    | Empty ->
+	()
+    | Leaf x ->
+	f x
+    | Branch (_, _, tree0, tree1) ->
+	iter f tree0;
+	iter f tree1
+
+  (* [fold f s seed] invokes [f x accu], in turn, for each element [x] of the set [s]. Elements are presented to [f]
+     according to some unspecified, but fixed, order. The initial value of [accu] is [seed]; then, at each new call,
+     its value is the value returned by the previous invocation of [f]. The value returned by [fold] is the final
+     value of [accu]. In other words, if $s = \{ x_1, x_2, \ldots, x_n \}$, where $x_1 < x_2 < \ldots < x_n$, then
+     [fold f s seed] computes $([f]\,x_n\,\ldots\,([f]\,x_2\,([f]\,x_1\,[seed]))\ldots)$. *)
+
+  let rec fold f s accu =
+    match s with
+    |	Empty ->
+	accu
+    |	Leaf x ->
+	f x accu
+    |	Branch (_, _, s0, s1) ->
+	fold f s1 (fold f s0 accu)
+
+  (* [elements s] is a list of all elements in the set [s]. *)
+
+  let elements s =
+    fold (fun tl hd -> tl :: hd) s []
+
+  (* [fold_rev] performs exactly the same job as [fold], but presents elements to [f] in the opposite order. *)
+
+  let rec fold_rev f s accu =
+    match s with
+    | Empty ->
+	accu
+    | Leaf x ->
+	f x accu
+    | Branch (_, _, s0, s1) ->
+	fold_rev f s0 (fold_rev f s1 accu)
+
+  (* [iter2] does not make much sense for sets of integers. Better warn the user. *)
+
+  let rec iter2 f t1 t2 =
+    assert false
+
+  (* [iterator s] returns a stateful iterator over the set [s]. That is, if $s = \{ x_1, x_2, \ldots, x_n \}$, where
+     $x_1 < x_2 < \ldots < x_n$, then [iterator s] is a function which, when invoked for the $k^{\text{th}}$ time,
+     returns [Some]$x_k$, if $k\leq n$, and [None] otherwise. Such a function can be useful when one wishes to
+     iterate over a set's elements, without being restricted by the call stack's discipline.
+
+     For more comments about this algorithm, please see module [Baltree], which defines a similar one. *)
+
+  let iterator s =
+
+    let remainder = ref [ s ] in
+
+    let rec next () =
+      match !remainder with
+      | [] ->
+	  None
+      | Empty :: parent ->
+	  remainder := parent;
+	  next()
+      | (Leaf x) :: parent ->
+	  remainder := parent;
+	  Some x
+      | (Branch(_, _, s0, s1)) :: parent ->
+	  remainder := s0 :: s1 :: parent;
+	  next () in
+
+    next
+
+  (* [exists p s] returns [true] if and only if some element of [s] matches the predicate [p]. *)
+
+  exception Exists
+
+  let exists p s =
+    try
+      iter (fun x ->
+	if p x then
+	  raise Exists
+      ) s;
+      false
+    with Exists ->
+      true
+
+  (* [compare] is an ordering over sets. *)
+
+  exception Got of int
+
+  let compare s1 s2 =
+    let iterator2 = iterator s2 in
+    try
+      iter (fun x1 ->
+	match iterator2() with
+	| None ->
+	    raise (Got 1)
+	| Some x2 ->
+	    let c = Pervasives.compare x1 x2 in
+	    if c <> 0 then
+	      raise (Got c)
+      ) s1;
+      match iterator2() with
+      | None ->
+	  0
+      | Some _ ->
+	  -1
+    with Got c ->
+      c
+
+  (* [equal] implements equality over sets. *)
+
+  let equal s1 s2 =
+    compare s1 s2 = 0
+
+  (* [subset] implements the subset predicate over sets. In other words, [subset s t] returns [true] if and only if
+     $s\subseteq t$. It is a specialized version of [diff]. *)
+
+  exception NotSubset
+
+  let subset s t =
+
+    let rec diff s t =
+      match s, t with
+
+      | Empty, _ ->
+	  ()
+      | _, Empty
+
+      | Branch _, Leaf _ ->
+	  raise NotSubset
+      | Leaf x, _ ->
+	  if not (mem x t) then
+	    raise NotSubset
+
+      | Branch(p, m, s0, s1), Branch(q, n, t0, t1) ->
+
+	  if (p = q) & (m = n) then begin
+
+	    diff s0 t0;
+	    diff s1 t1
+
+	  end
+	  else if (X.shorter n m) & (match_prefix p q n) then
+
+	    diff s (if (p land n) = 0 then t0 else t1)
+
+	  else
+
+	    (* Either [q] contains [p], which means at least one of [s]'s sub-trees is not contained within [t],
+	       or the prefixes disagree. In either case, the subset relationship cannot possibly hold. *)
+
+	    raise NotSubset in
+
+    try
+      diff s t;
+      true
+    with NotSubset ->
+      false
+
+  (* [filter p s] returns the subset of [s] formed by all elements which satisfy the predicate [p]. *)
+
+  let filter predicate s =
+    let modified = ref false in
+
+    let subset = fold (fun element subset ->
+      if predicate element then
+	add element subset
+      else begin
+	modified := true;
+	subset
+      end
+    ) s Empty in
+
+    if !modified then
+      subset
+    else
+      s
+
+  (* [map f s] computes the image of [s] through [f]. *)
+
+  let map f s =
+    fold (fun element accu ->
+      add (f element) accu
+    ) s Empty
+
+  (* [monotone_map] and [endo_map] do not make much sense for sets of integers. Better warn the user. *)
+
+  let monotone_map f s =
+    assert false
+
+  let endo_map f s =
+    assert false
+
+end
 
 (*i --------------------------------------------------------------------------------------------------------------- i*)
 (*s \mysection{Relating sets and maps} *)

@@ -335,10 +335,42 @@ let subsume ((k1, toksr1) as state1) ((k2, toksr2) as state2) =
   loop (Array.length toksr1)
 
 (* This function determines whether two (core-equivalent) states are
-   weakly compatible in the sense of Pager. This criterion guarantees
-   that the states can be merged without creating conflicts, now or
-   later. That is, weak compatibility implies absence of conflicts and
-   is preserved by transitions. *)
+   compatible, according to a criterion that is close to Pager's weak
+   compatibility criterion.
+
+   Pager's criterion guarantees that if a merged state has a potential
+   conflict at [(i, j)] -- that is, some token [t] appears within the
+   lookahead sets of both item [i] and item [j] -- then there exists a
+   state in the canonical automaton that also has a potential conflict
+   at [(i, j)] -- that is, some token [u] appears within the lookahead
+   sets of both item [i] and item [j]. Note that [t] and [u] can be
+   distinct.
+
+   Pager has shown that his weak compatibility criterion is stable,
+   that is, preserved by transitions and closure. This means that, if
+   two states can be merged, then so can their successors. This is
+   important, because merging two states means committing to merging
+   their successors, even though we have not even built these
+   successors yet.
+
+   The criterion used here is a slightly more restrictive version of
+   Pager's criterion, which guarantees equality of the tokens [t] and
+   [u]. This is done essentially by applying Pager's original
+   criterion and a token-wise basis. Pager's original criterion states
+   that two states can be merged if the new state has no conflict or
+   one of the original states has a conflict. Our more restrictive
+   criterion states that two states can be merged if, for every token
+   [t], the new state has no conflict at [t] or one of the original
+   states has a conflict at [t].
+
+   This modified criterion is also stable. My experiments show that it
+   is almost as effective in practice: out of more than a hundred
+   real-world sample grammars, only one automaton was affected, and
+   only one extra state appeared as a result of using the modified
+   criterion. Its advantage is to potentially make conflict
+   explanations easier: if there appears to be a conflict at [t], then
+   some conflict at [t] can be explained. This was not true when using
+   Pager's original criterion. *)
 
 let compatible (k1, toksr1) (k2, toksr2) =
   assert (k1 = k2);
@@ -357,16 +389,29 @@ let compatible (k1, toksr1) (k2, toksr2) =
 	else
 	  let toksr1j = toksr1.(j)
 	  and toksr2j = toksr2.(j) in
-	  begin
-	    (* The two states are compatible at (i, j) if either (1)
-	       pointwise merging of their lookahead sets produces no
-	       conflict at (i, j)... *)
-	           (TerminalSet.disjoint toksr1i toksr2j && TerminalSet.disjoint toksr1j toksr2i)
-            (* ... or (2) there was already a conflict at (i, j) in
-	       one of the two states. *)
-            || not (TerminalSet.disjoint toksr1i toksr1j && TerminalSet.disjoint toksr2i toksr2j)
-	  end
-	  && loopj (j+1)
+
+	  (* The two states are compatible at (i, j) if every conflict
+	     token in the merged state already was a conflict token in
+	     one of the two original states. This could be written as
+	     follows:
+
+            TerminalSet.subset
+	      (TerminalSet.inter (TerminalSet.union toksr1i toksr2i) (TerminalSet.union toksr1j toksr2j))
+	      (TerminalSet.union (TerminalSet.inter toksr1i toksr1j) (TerminalSet.inter toksr2i toksr2j))
+
+	     but is easily seen (on paper) to be equivalent to:
+
+          *)
+
+	     TerminalSet.subset
+	       (TerminalSet.inter toksr2i toksr1j)
+	       (TerminalSet.union toksr1i toksr2j)
+	  &&
+	     TerminalSet.subset
+	       (TerminalSet.inter toksr1i toksr2j)
+	       (TerminalSet.union toksr2i toksr1j)
+	  &&
+	     loopj (j+1)
       in
       loopj 0 && loopi (i+1)
   in

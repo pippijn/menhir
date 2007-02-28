@@ -15,21 +15,21 @@
 # Locating the ocaml compilers.
 # If ocamlfind is available, then it is used for that purpose.
 
-CAMLC           := $(shell if which ocamlfind &>/dev/null ; \
+CAMLC           := $(shell if ocamlfind ocamlc -v >/dev/null 2>&1 ; \
                        then echo ocamlfind ocamlc ; \
-		       elif which ocamlc.opt &>/dev/null ; \
+		       elif ocamlc.opt -v >/dev/null 2>&1 ; \
                        then echo ocamlc.opt ; \
 		       else echo ocamlc ; fi)
 
-CAMLOPT         := $(shell if which ocamlfind &>/dev/null ; \
+CAMLOPT         := $(shell if ocamlfind ocamlopt -v >/dev/null 2>&1 ; \
                        then echo ocamlfind ocamlopt ; \
-		       elif which ocamlopt.opt &>/dev/null ; \
+		       elif ocamlopt.opt -v >/dev/null 2>&1 ; \
                        then echo ocamlopt.opt ; \
 		       else echo ocamlopt ; fi)
 
-CAMLDEP         := $(shell if which ocamlfind &>/dev/null ; \
+CAMLDEP         := $(shell if ocamlfind ocamldep -version >/dev/null 2>&1 ; \
                        then echo ocamlfind ocamldep ; \
-		       elif which ocamldep.opt &>/dev/null ; \
+		       elif ocamldep.opt -version >/dev/null 2>&1 ; \
                        then echo ocamldep.opt ; \
 		       else echo ocamldep ; fi)
 
