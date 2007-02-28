@@ -29,6 +29,7 @@ module type S = sig
      map [m], and raises [Not_found] if no value is bound to [k]. *)
 
   val lookup: key -> 'a t -> 'a
+  val find: key -> 'a t -> 'a
 
   (* [add k d m] returns a map whose bindings are all bindings in [m],
      plus a binding of the key [k] to the datum [d]. If a binding
@@ -36,8 +37,7 @@ module type S = sig
 
   val add: key -> 'a -> 'a t -> 'a t
 
-  (* [strict_add k d m] returns a set whose elements are all elements
-     of [s], plus [x]. returns a map whose bindings are all bindings
+  (* [strict_add k d m] returns a map whose bindings are all bindings
      in [m], plus a binding of the key [k] to the datum [d]. If a
      binding already exists for [k] then [Unchanged] is raised. *)
 
@@ -53,6 +53,11 @@ module type S = sig
   type 'a decision = 'a -> 'a -> 'a
 
   val fine_add: 'a decision -> key -> 'a -> 'a t -> 'a t
+
+  (* [mem k m] tells whether the key [k] appears in the domain of the
+     map [m]. *)
+
+  val mem: key -> 'a t -> bool
 
   (* [singleton k d] returns a map whose only binding is from [k] to [d]. *)
 
@@ -74,12 +79,18 @@ module type S = sig
 
   val cardinal: 'a t -> int
 
+  (* [choose m] returns an arbitrarily chosen binding in [m], if [m]
+     is nonempty, and raises [Not_found] otherwise. *)
+
+  val choose: 'a t -> key * 'a
+
   (* [lookup_and_remove k m] looks up the value [v] associated to the
      key [k] in the map [m], and raises [Not_found] if no value is
      bound to [k]. The call returns the value [v], together with the
      map [m] deprived from the binding from [k] to [v]. *)
 
   val lookup_and_remove: key -> 'a t -> 'a * 'a t
+  val find_and_remove: key -> 'a t -> 'a * 'a t
 
   (* [remove k m] is the map [m] deprived from any binding for [k]. *)
 
@@ -135,6 +146,11 @@ module type S = sig
      identity function. *)
 
   val endo_map: ('a -> 'a) -> 'a t -> 'a t
+
+  (* If [dcompare] is an ordering over data, then [compare dcompare]
+     is an ordering over maps. *)
+
+  val compare: ('a -> 'a -> int) -> 'a t -> 'a t -> int
 
   (* A map's domain is a set. Thus, to be able to perform operations
      on domains, we need set operations, provided by the [Domain]

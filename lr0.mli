@@ -85,8 +85,8 @@ val equal: lr1state -> lr1state -> bool
 
 val subsume: lr1state -> lr1state -> bool
 
-(* Weak compatibility, in Pager's sense. The two states must have the
-   same core. *)
+(* A slightly modified version of Pager's weak compatibility
+   criterion. The two states must have the same core. *)
 
 val compatible: lr1state -> lr1state -> bool
 

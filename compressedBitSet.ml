@@ -116,6 +116,9 @@ let iter f s =
 let cardinal s = 
   fold (fun _ m -> m + 1) s 0
 
+let elements s =
+  fold (fun tl hd -> tl :: hd) s []
+
 let rec subset s1 s2 = 
   match s1, s2 with
   | N, _ ->

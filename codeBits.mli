@@ -54,3 +54,7 @@ val arrow: typ -> typ -> typ
 val arrowif: bool -> typ -> typ -> typ
 val marrow: typ list -> typ -> typ
 
+(* These functions are used to generate names in menhir's namespace. *)
+val prefix: string -> string
+val dataprefix: string -> string
+val tvprefix: string -> string

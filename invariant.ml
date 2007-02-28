@@ -24,15 +24,6 @@
 open Grammar
 
 (* ------------------------------------------------------------------------ *)
-(* Sets of nodes. *)
-
-module NodeSet =
-  Set.Make (struct
-    type t = Lr1.node
-    let compare node1 node2 = Lr1.number node1 - Lr1.number node2
-  end)
-
-(* ------------------------------------------------------------------------ *)
 (* Discover what is known of the structure of the stack in every
    automaton node. This knowledge can be defined, to a first
    approximation, as the greatest common suffix of all paths that lead
@@ -61,7 +52,7 @@ type tail =
   | TailUnknown
 
 type cell =
-    Symbol.t * NodeSet.t
+    Symbol.t * Lr1.NodeSet.t
 
 type word =
     cell list
@@ -101,7 +92,7 @@ let rec wmeet (w1 : word) (w2 : word) : word * tail =
 	(* The stacks agree on their top cell. It is therefore part
 	   of the greatest common suffix. *)
         let w, tail = wmeet w1 w2 in
-	(symbol1, NodeSet.union states1 states2) :: w, tail
+	(symbol1, Lr1.NodeSet.union states1 states2) :: w, tail
       else
         (* The stacks disagree on their top cell. Their greatest common
 	   suffix is therefore empty. *)
@@ -152,7 +143,7 @@ let () =
        and where the structure of the remainder of the stack is the
        structure of the stack at the [source] node. *)
 
-    let stk = extend (symbol, NodeSet.singleton source) (stack source) in
+    let stk = extend (symbol, Lr1.NodeSet.singleton source) (stack source) in
 
     (* Define or update the structure of the stack at the [target]
        node, depending on whether this node was newly discovered. *)
@@ -171,7 +162,7 @@ type info =
   (* Production is never reduced. *)
   | Zero
   (* Production can be reduced at certain nodes with a certain stack structure. *)
-  | More of NodeSet.t * stack
+  | More of Lr1.NodeSet.t * stack
 
 type prodinfo =
     info ProductionMap.t
@@ -190,12 +181,12 @@ let prodinfo : prodinfo =
 	match find prod prodinfo with
 	| Zero ->
 	    More (
-	      NodeSet.singleton node,
+	      Lr1.NodeSet.singleton node,
 	      truncate (Production.length prod) (stack node)
             )
 	| More (nodes, stk') ->
 	    More (
-	      NodeSet.add node nodes,
+	      Lr1.NodeSet.add node nodes,
 	      meet (stack node) stk'
             )
       ) prodinfo
@@ -274,14 +265,14 @@ let represent state =
   UnionFind.change (represented state) true
 
 let represents states =
-  represent (NodeSet.choose states)
+  represent (Lr1.NodeSet.choose states)
 
 (* Enforce condition (1) above. *)
 
 let share (w, _) =
   List.iter (fun (_, states) ->
     let dummy = UnionFind.fresh false in
-    NodeSet.iter (fun state ->
+    Lr1.NodeSet.iter (fun state ->
       UnionFind.eunion dummy (represented state)
     ) states
   ) w
@@ -325,12 +316,12 @@ let handler state =
       false
 
 let handlers states =
-  NodeSet.exists handler states
+  Lr1.NodeSet.exists handler states
 
 let () =
   Array.iter (fun (w, _) ->
     List.iter (fun (_, states) ->
-      if NodeSet.cardinal states >= 2 && handlers states then
+      if Lr1.NodeSet.cardinal states >= 2 && handlers states then
 	represents states
     ) w
   ) stacks
@@ -346,7 +337,7 @@ let () =
       | More (sites, (w, _)) ->
 	  let length = Production.length prod in
 	  if length = 0 then
-	    NodeSet.iter represent sites
+	    Lr1.NodeSet.iter represent sites
 	  else
 	    let (_, states) = List.nth w (length - 1) in
 	    represents states
@@ -358,10 +349,10 @@ let represented state =
   UnionFind.find (represented state)
 
 let representeds states =
-  if NodeSet.is_empty states then
+  if Lr1.NodeSet.is_empty states then
     assert false
   else
-    represented (NodeSet.choose states)
+    represented (Lr1.NodeSet.choose states)
 
 let representedc (_, states) =
   representeds states
@@ -449,8 +440,8 @@ let rewind node : instruction =
 	     represented. *)
 
 	  let (_, states) = cell in
-	  assert (NodeSet.cardinal states = 1);
-	  let state = NodeSet.choose states in
+	  assert (Lr1.NodeSet.cardinal states = 1);
+	  let state = Lr1.NodeSet.choose states in
 	  DownTo ([ cell ], UnRepresented state)
 
 	else
@@ -482,8 +473,8 @@ let gotostack : Nonterminal.t -> word =
   Nonterminal.tabulate (fun nt ->
     let sources =
       Lr1.targets (fun accu sources _ ->
-	List.fold_right NodeSet.add sources accu
-      ) NodeSet.empty (Symbol.N nt)
+	List.fold_right Lr1.NodeSet.add sources accu
+      ) Lr1.NodeSet.empty (Symbol.N nt)
     in
     [ Symbol.N nt, sources ]
   )
@@ -599,7 +590,7 @@ let fold_reduced f prod accu =
   | Zero ->
       accu
   | More (nodes, _) ->
-      NodeSet.fold f nodes accu
+      Lr1.NodeSet.fold f nodes accu
 
 (* ------------------------------------------------------------------------- *)
 (* Miscellaneous. *)
@@ -642,15 +633,15 @@ let recoverers =
       match Lr1.incoming_symbol node with
       | Some (Symbol.T tok)
 	when Terminal.equal tok Terminal.error ->
-	  NodeSet.add node recoverers
+	  Lr1.NodeSet.add node recoverers
       | _ ->
 	  recoverers
-    ) NodeSet.empty
+    ) Lr1.NodeSet.empty
   else
-    NodeSet.empty
+    Lr1.NodeSet.empty
 
 let recoverer node =
-  NodeSet.mem node recoverers
+  Lr1.NodeSet.mem node recoverers
 
 (* ------------------------------------------------------------------------ *)
 (* Discover which states can peek at an error. These are the states
@@ -665,14 +656,14 @@ let errorpeekers =
       let prod = Misc.single prods in
       let nt = Production.nt prod in
       Lr1.targets (fun errorpeekers _ target ->
-	NodeSet.add target errorpeekers
+	Lr1.NodeSet.add target errorpeekers
       ) errorpeekers (Symbol.N nt)
     with Not_found ->
       errorpeekers
-  ) NodeSet.empty
+  ) Lr1.NodeSet.empty
 
 let errorpeeker node =
-  NodeSet.mem node errorpeekers
+  Lr1.NodeSet.mem node errorpeekers
 
 (* ------------------------------------------------------------------------ *)
 
