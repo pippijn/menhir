@@ -18,10 +18,9 @@ build: build-stamp
 build-stamp: patch-stamp
 	dh_testdir
 	if [ -e /usr/bin/ocamlopt ]; then \
-		$(MAKE) menhir PREFIX=/usr; \
+		$(MAKE) TARGET=opt PREFIX=/usr; \
 	else \
-		$(MAKE) menhir.byte PREFIX=/usr; \
-		mv menhir.byte menhir; \
+		$(MAKE) TARGET=byte PREFIX=/usr; \
 	fi
 	touch build-stamp
 
@@ -47,7 +46,6 @@ install: build
 
 # Build architecture-independent files here.
 binary-indep: build install
-# We have nothing to do by default.
 
 # Build architecture-dependent files here.
 binary-arch: build install

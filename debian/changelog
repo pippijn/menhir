@@ -1,3 +1,10 @@
+menhir (20070322.dfsg-1) experimental; urgency=low
+
+  * New upstream release.
+  * Menhir is now correctly bootstrapped, closes: #397467.
+
+ -- Samuel Mimram <smimram@debian.org>  Fri, 23 Mar 2007 00:14:31 +0100
+
 menhir (20070215.dfsg-1) experimental; urgency=low
 
   * New upstream release.
