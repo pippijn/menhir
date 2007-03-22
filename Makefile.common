@@ -14,9 +14,37 @@
 # -*- Makefile -*- 
 # -------------------------------------------------------------------------
 
-.PHONY: executables clean bootstrap demos
+.PHONY: clean demos
 
-COLD         += clean bootstrap demos
+COLD         += clean demos
+
+# ----------------------------------------------------------------------------
+# Locating the ocaml compilers.
+# If ocamlfind is available, then it is used for that purpose.
+
+CAMLTOP         := ocaml
+
+CAMLC           := $(shell if ocamlfind ocamlc -v >/dev/null 2>&1 ; \
+                       then echo ocamlfind ocamlc ; \
+		       elif ocamlc.opt -v >/dev/null 2>&1 ; \
+                       then echo ocamlc.opt ; \
+		       else echo ocamlc ; fi)
+
+CAMLOPT         := $(shell if ocamlfind ocamlopt -v >/dev/null 2>&1 ; \
+                       then echo ocamlfind ocamlopt ; \
+		       elif ocamlopt.opt -v >/dev/null 2>&1 ; \
+                       then echo ocamlopt.opt ; \
+		       else echo ocamlopt ; fi)
+
+CAMLDEP         := $(shell if ocamlfind ocamldep -version >/dev/null 2>&1 ; \
+                       then echo ocamlfind ocamldep ; \
+		       elif ocamldep.opt -version >/dev/null 2>&1 ; \
+                       then echo ocamldep.opt ; \
+		       else echo ocamldep ; fi)
+
+CAMLLEX         := ocamllex
+
+CAMLYACC        := ocamlyacc -v
 
 # -------------------------------------------------------------------------
 
@@ -55,53 +83,47 @@ XBJECTS      := $(MODULES:=.cmx)
 
 # -------------------------------------------------------------------------
 
-# How to bootstrap.
+# How to bootstrap. Set TARGET to byte or opt depending on the desired
+# architecture. In either case, the resulting executable is named
+# menhir.
 
-ONE          := stage-one
-MENHIR       := menhir
-REFERENCE    := reference-parser
-
-# These two really shouldn't be necessary, but there are corner cases
-# where they are needed (e.g. when make is invoked without a target
-# and the .depend file is regenerated).
-
-ifndef PGEN
-  PGEN       := $(CAMLYACC)
-endif
-ifndef PARSER
-  PARSER     := parser
+ifndef TARGET
+  TARGET     := opt
 endif
 
-bootstrap:
+GOAL         := menhir.$(TARGET)
+
+menhir: .versioncheck
 # Build a stage one executable using ocamlyacc.
-	$(MAKE) $(MFLAGS) -s PGEN="$(CAMLYACC)" PARSER=parser EXECUTABLE=$(ONE) executables
+	$(MAKE) $(MFLAGS) -s PGEN="$(CAMLYACC)" PARSER=parser $(GOAL)
 # Remove the ocamlyacc-built parser.
 	@/bin/rm -f parser.ml parser.mli
-# Build a stage two executable using the stage one executable.
-	$(MAKE) $(MFLAGS) -s PGEN="./$(ONE) $(PGFLAGS)" PARSER=fancy-parser EXECUTABLE=$(MENHIR) executables
+# Build a stage two executable using the stage one executable (which is overwritten).
+	$(MAKE) $(MFLAGS) -s PGEN="./$(GOAL) $(PGFLAGS)" PARSER=fancy-parser $(GOAL)
 # Create a stage three parser and make sure that it is identical.
-	@./$(MENHIR) $(PGFLAGS) -b $(REFERENCE) fancy-parser.mly 2>/dev/null
-	@if diff parser.mli $(REFERENCE).mli 2>&1 >/dev/null ; then \
-	  if diff parser.ml $(REFERENCE).ml 2>&1 >/dev/null ; then \
+	@./$(GOAL) $(PGFLAGS) -b reference fancy-parser.mly 2>/dev/null
+	@if diff parser.mli reference.mli 2>&1 >/dev/null ; then \
+	  if diff parser.ml reference.ml 2>&1 >/dev/null ; then \
 	    echo "Bootstrap successful." ; \
 	  else \
-	    echo "Bootstrap FAILED: the implementation files differ." ; \
+	    echo "Bootstrap FAILED: the implementation files differ." && false ; \
           fi ; \
 	else \
-	  echo "Bootstrap FAILED: the interface files differ." ; \
+	  echo "Bootstrap FAILED: the interface files differ." && false ; \
 	fi
+	@rm -f reference.{ml,mli}
+# Rename the stage two executable to the desired name.
+	@ln $(GOAL) menhir
 
 # -------------------------------------------------------------------------
 
 # Linking.
 
-executables: $(EXECUTABLE)
+menhir.byte: $(OBJECTS)
+	$(CAMLC) -o $@ $(LNKBFLAGS) $(OBJECTS)
 
-$(EXECUTABLE): $(XBJECTS)
-	$(CAMLOPT) -o $(EXECUTABLE) $(LNKOFLAGS) $(XBJECTS)
-
-$(EXECUTABLE).byte: $(OBJECTS)
-	$(CAMLC) -o $(EXECUTABLE).byte $(LNKBFLAGS) $(OBJECTS)
+menhir.opt: $(XBJECTS)
+	$(CAMLOPT) -o $@ $(LNKOFLAGS) $(XBJECTS)
 
 # -------------------------------------------------------------------------
 
@@ -122,15 +144,26 @@ endif
 # Cleaning up.
 
 clean::
-	/bin/rm -f $(MENHIR).byte $(MENHIR) $(ONE).byte $(ONE)
+	/bin/rm -f menhir.byte menhir.opt menhir
 	/bin/rm -f *.cmi *.cmx *.cmo *.o *.obj *~ .*~
-	/bin/rm -f $(REFERENCE).ml $(REFERENCE).mli $(GENERATED)
+	/bin/rm -f reference.ml reference.mli $(GENERATED)
 	/bin/rm -f .depend *.conflicts *.automaton *.annot
 
 # -------------------------------------------------------------------------
 
-# Compiling. The parser source is found in $(PARSER).mly and is processed
-# using $(PGEN).
+# Compiling. The parser source is found in $(PARSER).mly and is
+# processed using $(PGEN).
+
+# These two default definitions really shouldn't be necessary, but
+# there are corner cases where they are needed (e.g. when make is
+# invoked without a target and the .depend file is regenerated).
+
+ifndef PGEN
+  PGEN       := $(CAMLYACC)
+endif
+ifndef PARSER
+  PARSER     := parser
+endif
 
 %.cmi: %.mli
 	$(CAMLC) $(BFLAGS) -c $<
@@ -160,4 +193,19 @@ demos:
 
 clean::
 	$(MAKE) $(MFLAGS) -C demos $@
+
+# ----------------------------------------------------------------------------
+# Checking the version of the ocaml compiler.
+#
+# We check the bytecode compiler only, because some architectures don't have
+# the native code compiler. We assume that both compilers, if present, are in
+# sync.
+
+.versioncheck:
+	@ echo Checking that Objective Caml is recent enough...
+	@ $(CAMLTOP) str.cma check-ocaml-version.ml --verbose --gt "3.09"
+	@ touch .versioncheck
+
+clean::
+	rm -f .versioncheck
 
