@@ -36,8 +36,8 @@
 
 # Include directives for compilation and for linking.
 
-if $(not $(defined INCLUDE))
-    INCLUDE          =
+if $(not $(defined PREFIXED_OCAMLINCLUDES))
+    PREFIXED_OCAMLINCLUDES = 
     export
 
 # Bytecode compilation flags.
@@ -72,8 +72,8 @@ if $(not $(defined LGFLAGS))
 
 # Parser generation flags.
 
-if $(not $(defined PGFLAGS))
-    PGFLAGS          = --infer -v
+if $(not $(defined MENHIR_FLAGS))
+    MENHIR_FLAGS          = --infer -v
     export
 
 # Suffix appended to the name of the bytecode executable.
@@ -170,13 +170,13 @@ WrapScanner(command) =
 # Compilation.
 
 %.cmi: %.mli
-	$(OCAMLC) $(INCLUDE) $(BFLAGS) -c $<
+	$(OCAMLC) $(PREFIXED_OCAMLINCLUDES) $(BFLAGS) -c $<
 
 %.cmo: %.ml
-	$(OCAMLC) $(INCLUDE) $(BFLAGS) -c $<
+	$(OCAMLC) $(PREFIXED_OCAMLINCLUDES) $(BFLAGS) -c $<
 
 %.cmx %.o: %.ml
-	$(OCAMLOPT) $(INCLUDE) $(OFLAGS) -c $<
+	$(OCAMLOPT) $(PREFIXED_OCAMLINCLUDES) $(OFLAGS) -c $<
 
 %.ml: %.mll
 	$(OCAMLLEX) $(LGFLAGS) $<
@@ -189,10 +189,10 @@ WrapScanner(command) =
 # Linking.
 
 $(EXECUTABLE)$(OSUFFIX): $(addsuffix .cmx, $(MODULES))
-	$(OCAMLOPT) -o $@ $(INCLUDE) $(OLNKFLAGS) $+
+	$(OCAMLOPT) -o $@ $(PREFIXED_OCAMLINCLUDES) $(OLNKFLAGS) $+
 
 $(EXECUTABLE)$(BSUFFIX): $(addsuffix .cmo, $(MODULES))
-	$(OCAMLC) -o $@ $(INCLUDE) $(BLNKFLAGS) $+
+	$(OCAMLC) -o $@ $(PREFIXED_OCAMLINCLUDES) $(BLNKFLAGS) $+
 
 # ----------------------------------------------------------------
 
@@ -202,7 +202,7 @@ MenhirMulti(target, sources, options) =
     TARGETS   = $(file $(target).ml $(target).mli)
     SOURCES   = $(file $(sources))
     $(TARGETS): $(SOURCES)
-	$(MENHIR) --ocamlc "$(OCAMLC)" $(PGFLAGS) --base $(target) $(options) $(SOURCES)
+	$(MENHIR) --ocamlc "$(OCAMLC) $(PREFIXED_OCAMLINCLUDES) $(BFLAGS)" $(MENHIR_FLAGS) --base $(target) $(options) $(SOURCES)
     .SCANNER: $(TARGETS): $(SOURCES)
 	WrapScanner($(MENHIR) --ocamldep "$(OCAMLDEP)" --depend --base $(target) $(options) $(SOURCES))
 
