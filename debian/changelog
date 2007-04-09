@@ -1,3 +1,9 @@
+menhir (20070322.dfsg-2) unstable; urgency=low
+
+  * Uploading to unstable.
+
+ -- Samuel Mimram <smimram@debian.org>  Mon, 09 Apr 2007 17:53:02 +0200
+
 menhir (20070322.dfsg-1) experimental; urgency=low
 
   * New upstream release.
