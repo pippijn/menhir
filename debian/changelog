@@ -1,3 +1,9 @@
+menhir (20070322.dfsg-3) unstable; urgency=low
+
+  * Rebuild in bytecode when native compilation fails.
+
+ -- Samuel Mimram <smimram@debian.org>  Wed, 18 Apr 2007 12:51:43 +0200
+
 menhir (20070322.dfsg-2) unstable; urgency=low
 
   * Uploading to unstable.
