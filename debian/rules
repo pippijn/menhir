@@ -33,7 +33,7 @@ clean: unpatch
 	dh_testroot
 	rm -f build-stamp configure-stamp
 
-	-$(MAKE) clean
+	-$(MAKE) clean PREFIX=$(CURDIR)/debian/menhir/usr
 
 	dh_clean
 

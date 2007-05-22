@@ -1,3 +1,9 @@
+menhir (20070322.dfsg-4) unstable; urgency=low
+
+  * Correcly clean, closes: #424571.
+
+ -- Samuel Mimram <smimram@debian.org>  Tue, 22 May 2007 22:36:35 +0200
+
 menhir (20070322.dfsg-3) unstable; urgency=low
 
   * Rebuild in bytecode when native compilation fails.
