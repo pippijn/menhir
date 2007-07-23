@@ -1,6 +1,21 @@
+2007/05/20:
+Made a fundamental change in the construction of the LR(1) automaton
+in order to eliminate a bug that could lead to spurious conflicts --
+thanks to Ketti for submitting a bug report.
+
+2007/05/18:
+Added --follow-construction to help understand the construction of the
+LR(1) automaton (very verbose).
+
+2007/05/11:
+Code generation: more explicit qualifications with Pervasives so as
+to avoid capture when the user redefines some of the built-in operators,
+such as (+).
+Added a new demo (calc-param) that shows how to use %parameter.
+
 2007/03/22:
 Makefile improvements (check for PREFIX; bootstrap in bytecode now
-also available).
+also available). Slight changes to OMakefile.shared.
 
 2007/02/15:
 Portability fix in Makefile and Makefile.shared (avoided "which").

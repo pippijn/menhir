@@ -242,16 +242,23 @@ let export (k, toksr) =
   ) (InfiniteArray.get states k) (0, Item.Map.empty) in
   items
 
-(* Displaying a state. Only the kernel is displayed, not the
-   closure. *)
+(* Displaying a concrete state. *)
 
-let print (k, toksr) =
+let print_concrete (state : concretelr1state) =
   let buffer = Buffer.create 1024 in
-  let (_ : int) = Item.Set.fold (fun item i ->
-    Printf.bprintf buffer "%s[ %s ]\n" (Item.print item) (TerminalSet.print toksr.(i));
-    i+1
-  ) (InfiniteArray.get states k) 0 in
+  Item.Map.iter (fun item toks ->
+    Printf.bprintf buffer "%s[ %s ]\n" (Item.print item) (TerminalSet.print toks)
+  ) state;
   Buffer.contents buffer
+
+(* Displaying a state. By default, only the kernel is displayed, not
+   the closure. *)
+
+let print state =
+  print_concrete (export state)
+
+let print_closure state =
+  print_concrete (closure (export state))
 
 (* The core of an LR(1) state is the underlying LR(0) state. *)
 
@@ -308,6 +315,25 @@ let transitions
     ((k, Array.map (interpret state) sr) : lr1state)
   ) (InfiniteArray.get _transitions k)
 
+let outgoing_symbols
+    (k : node)
+    : Symbol.t list =
+
+  SymbolMap.domain (InfiniteArray.get _transitions k)
+
+let transition
+    symbol
+    ((k, _) as state : lr1state)
+    : lr1state =
+
+  let ((k, sr) : symbolic_transition_target) =
+    try
+      SymbolMap.find symbol (InfiniteArray.get _transitions k)
+    with Not_found ->
+      assert false (* no transition along this symbol *)
+  in
+  (k, Array.map (interpret state) sr)
+
 (* Equality of states. *)
 
 let equal ((k1, toksr1) as state1) ((k2, toksr2) as state2) =
@@ -356,7 +382,7 @@ let subsume ((k1, toksr1) as state1) ((k2, toksr2) as state2) =
    The criterion used here is a slightly more restrictive version of
    Pager's criterion, which guarantees equality of the tokens [t] and
    [u]. This is done essentially by applying Pager's original
-   criterion and a token-wise basis. Pager's original criterion states
+   criterion on a token-wise basis. Pager's original criterion states
    that two states can be merged if the new state has no conflict or
    one of the original states has a conflict. Our more restrictive
    criterion states that two states can be merged if, for every token

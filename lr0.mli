@@ -70,6 +70,8 @@ val start: node -> lr1state
 (* Information about the transitions and reductions at a state. *)
 
 val transitions: lr1state -> lr1state SymbolMap.t
+val outgoing_symbols: node -> Symbol.t list
+val transition: Symbol.t -> lr1state -> lr1state
 
 val reductions: lr1state -> (TerminalSet.t * Production.index) list
 
@@ -105,8 +107,13 @@ val union: lr1state -> lr1state -> lr1state
 
 val restrict: TerminalSet.t -> lr1state -> lr1state
 
-(* Displaying a state. Only the kernel is displayed, not the
-   closure. *)
+(* Displaying a concrete state. *)
+
+val print_concrete: concretelr1state -> string
+
+(* Displaying a state. By default, only the kernel is displayed, not
+   the closure. *)
 
 val print: lr1state -> string
+val print_closure: lr1state -> string
 

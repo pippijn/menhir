@@ -17,5 +17,5 @@ EXECUTABLE      := calc
 OCAMLDEPWRAPPER := ../ocamldep.wrapper
 include ../Makefile.shared
 $(eval $(call menhir_monomodule,tokens,--only-tokens))
-$(eval $(call menhir_multimodule,algebraic,tokens.mly algebraic.mly,--external-tokens Tokens))
-$(eval $(call menhir_multimodule,reverse,tokens.mly reverse.mly,--external-tokens Tokens))
+$(eval $(call menhir_multimodule,algebraic,tokens.mly algebraic.mly common.mly,--external-tokens Tokens))
+$(eval $(call menhir_multimodule,reverse,tokens.mly reverse.mly common.mly,--external-tokens Tokens))

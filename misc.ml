@@ -213,3 +213,11 @@ let normalize s =
 	()
   done;
   s
+
+(* [postincrement r] increments [r] and returns its original value. *)
+
+let postincrement r =
+  let x = !r in
+  r := x + 1;
+  x
+

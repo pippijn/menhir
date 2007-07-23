@@ -366,6 +366,11 @@ module SymbolMap = struct
 
   include Map.Make(Symbol)
 
+  let domain m =
+    fold (fun symbol _ accu ->
+      symbol :: accu
+    ) m []
+
   let purelynonterminal m =
     fold (fun symbol _ accu ->
       accu && Symbol.nonterminal symbol

@@ -48,6 +48,9 @@ let base =
 let dump =
   ref false
 
+let follow =
+  ref false
+
 let graph =
   ref false
 
@@ -119,6 +122,7 @@ let options = Arg.align [
   "--error-recovery", Arg.Set recovery, " Attempt recovery by discarding tokens after errors";
   "--explain", Arg.Set explain, " Explain conflicts in <basename>.conflicts";
   "--external-tokens", Arg.String codeonly, "<module> Import token type definition from <module>";
+  "--follow-construction", Arg.Set follow, " Follow the construction of the LR(1) automaton";
   "--graph", Arg.Set graph, " Write the grammar's dependency graph to <basename>.dot";
   "--infer", Arg.Set infer, " Invoke ocamlc for ahead of time type inference";
   "--log-automaton", Arg.Set_int logA, "<level> Log information about the automaton";
@@ -200,6 +204,9 @@ let explain =
 
 let dump =
   !dump
+
+let follow =
+  !follow
 
 let graph =
   !graph

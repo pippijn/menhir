@@ -11,17 +11,10 @@
 #                                                                        #
 ##########################################################################
 
-DEMOS := calc calc-two calc-param
-
-.PHONY: all clean
-
-all:
-	@for i in $(DEMOS) ; do \
-	  $(MAKE) -C $$i $(MFLAGS) ; \
-	done
-
-clean:
-	/bin/rm -f *~ .*~ *.omc
-	@for i in $(DEMOS) ; do \
-	  $(MAKE) -C $$i $(MFLAGS) clean ; \
-	done
+GENERATED       = parser.ml parser.mli lexer.ml
+MODULES         = parser lexer calc
+EXECUTABLE      = calc
+OCAMLDEPWRAPPER = ../ocamldep.wrapper
+include ../OMakefile.shared
+MenhirAuto()
+.DEFAULT: $(EXECUTABLE)$(OSUFFIX)

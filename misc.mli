@@ -127,3 +127,7 @@ val smap: ('a -> 'a) -> 'a list -> 'a list
 
 val normalize: string -> string
 
+(* [postincrement r] increments [r] and returns its original value. *)
+
+val postincrement: int ref -> int
+

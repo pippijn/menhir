@@ -461,7 +461,7 @@ let ptuple = function
 
 let trace (format : string) (args : expr list) : (pattern * expr) list =
   if Settings.trace then
-    [ PUnit, EApp (EVar "Printf.fprintf", (EVar "stderr") :: (EStringConst (format ^"\n%!")) :: args) ]
+    [ PUnit, EApp (EVar "Printf.fprintf", (EVar "Pervasives.stderr") :: (EStringConst (format ^"\n%!")) :: args) ]
   else
     []
 
@@ -1316,13 +1316,13 @@ let gettoken s defred e =
       if Invariant.errorpeeker s then begin
 	incr errorpeekers;
 	EIfThenElse (
-	  EApp (EVar "(=)", [ ERecordAccess (EVar env, fshifted); EIntConst (-1) ]),
+	  EApp (EVar "Pervasives.(=)", [ ERecordAccess (EVar env, fshifted); EIntConst (-1) ]),
 	  tracecomment "Resuming error handling" (call_error nomagic s),
 	  blet ([ PVar token, ERecordAccess (EVar env, ftoken) ], e)
         )
       end
       else
-	blet ([ assertshifted "(<>)" (-1);
+	blet ([ assertshifted "Pervasives.(<>)" (-1);
 		PVar token, ERecordAccess (EVar env, ftoken) ], e)
 
 (* This produces the definition of a [run] function. *)
@@ -1408,7 +1408,7 @@ let errorbookkeeping e =
 let initiate covered s =
 
   blet (
-    [ assertshifted "(>=)" 0 ],
+    [ assertshifted "Pervasives.(>=)" 0 ],
 
     if Invariant.recoverer s then begin
 
@@ -1416,7 +1416,7 @@ let initiate covered s =
       check_recoverer covered s;
 
       EIfThenElse (
-	EApp (EVar "(=)", [ ERecordAccess (EVar env, fshifted); EIntConst 0 ]),
+	EApp (EVar "Pervasives.(=)", [ ERecordAccess (EVar env, fshifted); EIntConst 0 ]),
 	blet (
 	  trace "Discarding last token read (%s)"
 		[ EApp (EVar print_token, [ ERecordAccess (EVar env, ftoken) ]) ] @
@@ -2006,9 +2006,9 @@ let discarddef = {
 		[ EApp (EVar print_token, [ EVar token ]);
 		  ERecordAccess (ERecordAccess (EVar env, fstartp), "Lexing.pos_cnum");
 		  ERecordAccess (ERecordAccess (EVar env, fendp), "Lexing.pos_cnum") ] @ [
-	  PVar shifted, EApp (EVar "(+)", [ ERecordAccess (EVar env, fshifted); EIntConst 1 ]);
+	  PVar shifted, EApp (EVar "Pervasives.(+)", [ ERecordAccess (EVar env, fshifted); EIntConst 1 ]);
 	  PUnit, EIfThen (
-		    EApp (EVar "(>=)", [ EVar shifted; EIntConst 0 ]),
+		    EApp (EVar "Pervasives.(>=)", [ EVar shifted; EIntConst 0 ]),
 		      ERecordWrite (EVar env, fshifted, EVar shifted)
 		  )
 	  ],
