@@ -1,3 +1,9 @@
+menhir (20070520-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Samuel Mimram <smimram@debian.org>  Mon, 23 Jul 2007 14:25:32 +0200
+
 menhir (20070322.dfsg-4) unstable; urgency=low
 
   * Correcly clean, closes: #424571.
