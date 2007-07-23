@@ -196,6 +196,8 @@ module SymbolMap : sig
 
   include Map.S with type key = Symbol.t
 
+  val domain: 'a t -> key list
+
   (* This returns [true] if and only if all of the symbols in
      the domain of the map at hand are nonterminals. *)
 

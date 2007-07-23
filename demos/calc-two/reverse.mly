@@ -16,15 +16,9 @@
    meaningless, and unary minus is not supported (some other symbol
    than MINUS would be required in order to avoid an ambiguity). *)
 
-%start <int> main
-
 %%
 
-main:
-| e = expr EOL
-    { e }
-
-expr:
+%public expr:
 | i = INT
     { i }
 | e1 = expr e2 = expr PLUS

@@ -221,8 +221,6 @@ let newline = ('\010' | '\013' | "\013\010")
 
 let whitespace = [ ' ' '\t' ';' ]
 
-let camlwhitespace = [ ' ' '\t' '\n' '\r' ]
-
 let lowercase = ['a'-'z' '\223'-'\246' '\248'-'\255' '_']
 
 let uppercase = ['A'-'Z' '\192'-'\214' '\216'-'\222']

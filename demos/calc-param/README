@@ -11,15 +11,8 @@
 *                                                                        *
 **************************************************************************
 
-This tiny program reads arithmetic expressions from the standard input
-channel. Each expression is expected to be complete when the current line
-ends. Its value is then displayed on the standard output channel.
-
-In this version, there is a single lexer, but there are two parsers, one for
-expressions in algebraic (that is, infix) notation, one for expressions in
-reverse Polish (that is, postfix) notation. One of the two parsers is selected
-at runtime via a command line switch.
-
-This demo illustrates how to build two parsers that share a single set of
-tokens (see tokens.mly) and that share some productions (see common.mly).
-
+In this variant of the calc demo, the parser's semantic actions are
+parameterized over a structure, called [Semantics], which defines how numbers
+should be interpreted. The parser is later instantiated with floating-point
+numbers, so the calculator actually performs floating-point evaluation -- but
+the grammar specification is independent of this detail.

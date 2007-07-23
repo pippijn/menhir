@@ -11,18 +11,42 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(* This simple function counts the number of newline characters
-   in a string. *)
+(* Let's do floating-point evaluation, for a change. *)
 
-let newline = ('\010' | '\013' | "\013\010")
+module FloatSemantics = struct
 
-let ordinary = [^ '\010' '\013']+
+  type number =
+      float
 
-rule count n = parse
-| eof
-    { n }
-| newline
-    { count (n + 1) lexbuf }
-| ordinary
-    { count n lexbuf }
+  let inject =
+    float_of_int
 
+  let ( + ) = ( +. )
+  let ( - ) = ( -. )
+  let ( * ) = ( *. )
+  let ( / ) = ( /. )
+  let (~- ) = (~-. )
+
+end
+
+(* Let us now specialize our parameterized parser. *)
+
+module FloatParser =
+  Parser.Make(FloatSemantics)
+
+(* The rest is as usual. *)
+
+let () =
+  let stdinbuf = Lexing.from_channel stdin in
+  while true do
+    (* Read line by line. *)
+    let linebuf = Lexing.from_string (Lexer.line stdinbuf) in
+    try
+      (* Run the parser on a single line of input. *)
+      Printf.printf "%.1f\n%!" (FloatParser.main Lexer.token linebuf)
+    with
+    | Lexer.Error msg ->
+	Printf.fprintf stderr "%s%!" msg
+    | FloatParser.Error ->
+	Printf.fprintf stderr "At offset %d: syntax error.\n%!" (Lexing.lexeme_start linebuf)
+  done

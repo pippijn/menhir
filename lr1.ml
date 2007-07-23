@@ -13,16 +13,21 @@
 
 open Grammar
 
-(* This module constructs an LR(1) automaton by following Pager's
-   method, that is, by merging states on the fly when they are found
-   to be (weakly) compatible. *)
+(* This module constructs an LR(1) automaton by following Pager's method, that
+   is, by merging states on the fly when they are weakly compatible. *)
 
 (* ------------------------------------------------------------------------ *)
 (* Nodes. *)
 
 type node = {
 
-    (* Nodes are numbered. *)
+    (* A node number, assigned during construction. *)
+
+    raw_number: int;
+
+    (* A node number, assigned after conflict resolution has taken
+       place and after inacessible nodes have been removed. This
+       yields sequential numbers, from the client's point of view. *)
 
     mutable number: int;
 
@@ -71,23 +76,98 @@ module NodeMap =
   Map.Make (Node)
 
 (* ------------------------------------------------------------------------ *)
-(* Construction of the automaton. *)
 
-(* A queue of pending nodes, whose successors should be explored or
-   re-explored. *)
+(* Output debugging information if [--follow-construction] is enabled. *)
 
-let pending =
-  Mark.fresh()
+let follow_transition (again : bool) (source : node) (symbol : Symbol.t) (state : Lr0.lr1state) =
+  if Settings.follow then
+    Printf.fprintf stderr
+      "%s transition out of state r%d along symbol %s.\nProposed target state:\n%s"
+      (if again then "Re-examining" else "Examining")
+      source.raw_number
+      (Symbol.print symbol)
+      (Lr0.print_closure state)
+
+let follow_state (msg : string) (node : node) (print : bool) =
+  if Settings.follow then
+    Printf.fprintf stderr
+      "%s: r%d.\n%s\n"
+      msg
+      node.raw_number
+      (if print then Lr0.print_closure node.state else "")
+
+(* ------------------------------------------------------------------------ *)
+
+(* The following two mutually recursive functions are invoked when the state
+   associated with an existing node grows. The node's descendants are examined
+   and grown into a fixpoint is reached.
+
+   This work is performed in an eager manner: we do not attempt to build any
+   new transitions until all existing nodes have been suitably grown. Indeed,
+   building new transitions requires making merging decisions, and such
+   decisions cannot be made on a sound basis unless all existing nodes have
+   been suitably grown. Otherwise, one could run into a dead end where two
+   successive, incompatible merging decisions are made, because the
+   consequences of the first decision (growing descendant nodes) were not made
+   explicit before the second decision was taken. This was a bug in versions
+   of Menhir ante 20070520.
+
+   It is necessary that all existing transitions be explicit before the [grow]
+   functions are called. In other words, if it has been decided that there will
+   be a transition from [node1] to [node2], then [node1.transitions] must be
+   updated before [grow] is invoked. *)
+
+(* [grow node state] grows the existing node [node], if necessary, so that its
+   associated state subsumes [state]. If this represents an actual (strict)
+   growth, then [node]'s descendants are grown as well. *)
+
+let rec grow node state =
+  if Lr0.subsume state node.state then
+    follow_state "Target state is unaffected" node false
+   else begin
+
+    (* If I know what I am doing, then the new state that is being merged into
+       the existing state should be compatible, in Pager's sense, with the
+       existing node. In other words, compatibility should be preserved
+       through transitions. *)
+
+    assert (Lr0.compatible state node.state &&
+            Lr0.eos_compatible state node.state);
+
+    (* Grow [node]. *)
+
+    node.state <- Lr0.union state node.state;
+    follow_state "Growing existing state" node true;
+
+    (* Grow [node]'s successors. *)
+
+    grow_successors node
+
+  end
+
+(* [grow_successors node] grows [node]'s successors. *)
+
+(* Note that, if there is a cycle in the graph, [grow_successors] can be
+   invoked several times at a single node [node], with [node.state] taking on
+   a new value every time. In such a case, this code should be correct,
+   although probably not very efficient. *)
+
+and grow_successors node =
+  SymbolMap.iter (fun symbol (successor_node : node) ->
+    let successor_state = Lr0.transition symbol node.state in
+    follow_transition true node symbol successor_state;
+    grow successor_node successor_state
+  ) node.transitions
+
+(* ------------------------------------------------------------------------ *)
+
+(* Data structures maintained during the construction of the automaton. *)
+
+(* A queue of pending nodes, whose outgoing transitions have not yet
+   been built. *)
 
 let queue : node Queue.t =
   Queue.create()
-
-let enqueue node =
-  if not (Mark.same node.mark pending) then begin
-    node.mark <- pending;
-    Queue.add node queue
-  end;
-  node
 
 (* A mapping of LR(0) node numbers to lists of nodes. This allows us to
    efficiently find all existing nodes that are core-compatible with a
@@ -96,91 +176,146 @@ let enqueue node =
 let map : node list array =
   Array.create Lr0.n []
 
-(* Exploring a state; this returns a (new or existing) node
-   and, if necessary, enqueues this node for exploration. *)
-
-exception Subsumed of node
-exception Compatible of node
+(* A counter that allows assigning raw numbers to nodes. *)
 
 let num =
   ref 0
 
-let explore (state : Lr0.lr1state) : node =
+(* ------------------------------------------------------------------------ *)
+
+(* [create state] creates a new node that stands for the state [state].
+   It is expected that [state] does not subsume, and is not subsumed by,
+   any existing state. *)
+
+let create (state : Lr0.lr1state) : node =
+
+  (* Allocate a new node. *)
+
+  let node = {
+    state = state;
+    transitions = SymbolMap.empty;
+    reductions = TerminalMap.empty;
+    conflict_tokens = TerminalSet.empty;
+    raw_number = Misc.postincrement num;
+    number = 0; (* temporary placeholder *)
+    mark = Mark.none;
+    predecessors = [];
+    incoming_symbol = None;
+  } in
+
+  (* Update the mapping of LR(0) cores to lists of nodes. *)
+
+  let k = Lr0.core state in
+  assert (k < Lr0.n);
+  map.(k) <- node :: map.(k);
+
+  (* Enqueue this node for further examination. *)
+
+  Queue.add node queue;
+
+  (* Debugging output. *)
+
+  follow_state "Creating a new state" node false;
+
+  (* Return the freshly created node. *)
+
+  node
+
+(* ------------------------------------------------------------------------ *)
+
+(* Materializing a transition turns its target state into a (fresh or
+   existing). There are three scenarios: the proposed new state can be
+   subsumed by an existing state, compatible with an existing state, or
+   neither. *)
+
+exception Subsumed of node
+
+exception Compatible of node
+
+let materialize (source : node) (symbol : Symbol.t) (target : Lr0.lr1state) : unit =
   try
 
-    (* Find all existing states that share the same core. *)
+    (* Debugging output. *)
 
-    let k = Lr0.core state in
+    follow_transition false source symbol target;
+
+    (* Find all existing core-compatible states. *)
+
+    let k = Lr0.core target in
     assert (k < Lr0.n);
     let similar = map.(k) in
 
-    (* Check whether one of these states subsume the candidate
-       new state. If so, no need to create a new state: just
-       reuse the existing one. *)
+    (* Check whether one of these states subsumes the candidate new state. If
+       so, there is no need to create a new node: just reuse the existing
+       one. *)
 
     List.iter (fun node ->
-      if Lr0.subsume state node.state then
+      if Lr0.subsume target node.state then
 	raise (Subsumed node)
     ) similar;
 
-    (* Check whether one of the existing states is compatible,
-       in Pager's sense, with the new state. If so, no need to
-       create a new state: just merge the new state into the
-       existing one. This requires reevaluating its successors. *)
+    (* Check whether one of the existing states is compatible, in Pager's
+       sense, with the new state. If so, there is no need to create a new
+       state: just merge the new state into the existing one. *)
 
     if Settings.pager then
       List.iter (fun node ->
-	if Lr0.compatible state node.state &&
-	   Lr0.eos_compatible state node.state then
+	if Lr0.compatible target node.state &&
+	   Lr0.eos_compatible target node.state then
 	  raise (Compatible node)
       ) similar;
 
-    (* Otherwise, create a new node. Two states that are in the
-       subsumption relation are also compatible. This implies that the
-       newly created node does not subsume any existing states. *)
+    (* Both of the above checks have failed. Create a new node. Two states
+       that are in the subsumption relation are also compatible. This implies
+       that the newly created node does not subsume any existing states. *)
 
-    incr num;
-
-    let node = {
-      state = state;
-      transitions = SymbolMap.empty;
-      reductions = TerminalMap.empty;
-      conflict_tokens = TerminalSet.empty;
-      number = 0; (* temporary placeholder *)
-      mark = Mark.none;
-      predecessors = [];
-      incoming_symbol = None;
-    } in
-
-    map.(k) <- node :: similar;
-
-    enqueue node
+    source.transitions <- SymbolMap.add symbol (create target) source.transitions
 
   with
 
-  | Compatible node ->
-      node.state <- Lr0.union state node.state;
-      enqueue node
-
   | Subsumed node ->
-      node
 
-(* Populate the queue with the start nodes and store them in an
-   array. *)
+      (* Join an existing target node. *)
+
+      follow_state "Joining existing state" node false;
+      source.transitions <- SymbolMap.add symbol node source.transitions
+
+  | Compatible node ->
+
+      (* Join and grow an existing target node. It seems important that the
+	 new transition is created before [grow_successors] is invoked, so
+	 that all transition decisions made so far are explicit. *)
+
+      node.state <- Lr0.union target node.state;
+      follow_state "Joining and growing existing state (Pager says, fine)" node true;
+      source.transitions <- SymbolMap.add symbol node source.transitions;
+      grow_successors node
+
+(* ------------------------------------------------------------------------ *)
+
+(* The actual construction process. *)
+
+(* Populate the queue with the start nodes and store them in an array. *)
 
 let entry : node array =
   Array.map (fun (k : Lr0.node) ->
-    explore (Lr0.start k)
+    create (Lr0.start k)
   ) Lr0.entry
 
-(* Until the queue is empty, take a node out the queue, construct the
-   nodes that correspond to its successors, and enqueue them. *)
+(* Pick a node in the queue, that is, a node whose transitions have not yet
+   been built. Build these transitions, and continue. *)
+
+(* Note that building a transition can cause existing nodes to grow, so
+   [node.state] is not necessarily invariant throughout the inner loop. *)
 
 let () =
   Misc.qiter (fun node ->
-    node.mark <- Mark.none;
-    node.transitions <- SymbolMap.map explore (Lr0.transitions node.state)
+    List.iter (fun symbol ->
+      materialize node symbol (Lr0.transition symbol node.state)
+    ) (Lr0.outgoing_symbols (Lr0.core node.state))
   ) queue
+
+(* Record how many nodes were constructed. *)
 
 let n =
   !num
@@ -493,7 +628,10 @@ let () =
   if Settings.dump then begin
     fold (fun () node ->
       let out = Lazy.force out in
-      Printf.fprintf out "State %d:\n%s" node.number (Lr0.print node.state);
+      Printf.fprintf out "State %d%s:\n%s"
+	node.number
+	(if Settings.follow then Printf.sprintf " (r%d)" node.raw_number else "")
+	(Lr0.print node.state);
       SymbolMap.iter (fun symbol node ->
 	Printf.fprintf out "-- On %s shift to state %d\n"
 	  (Symbol.print symbol) node.number

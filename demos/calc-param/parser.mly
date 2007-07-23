@@ -11,18 +11,42 @@
 /*                                                                        */
 /**************************************************************************/
 
-(* This partial grammar specification defines the syntax of expressions
-   in algebraic notation. *)
+(* These are the functions that we need in order to write our semantic
+   actions. *)
 
-%left PLUS MINUS        /* lowest precedence */
-%left TIMES DIV         /* medium precedence */
-%nonassoc UMINUS        /* highest precedence */
+%parameter<Semantics : sig
+  type number
+  val inject: int -> number
+  val ( + ): number -> number -> number
+  val ( - ): number -> number -> number
+  val ( * ): number -> number -> number
+  val ( / ): number -> number -> number
+  val ( ~-): number -> number
+end>
+
+(* The parser no longer returns an integer; instead, it returns an
+   abstract number. *)
+
+%start <Semantics.number> main
+
+(* Let us open the [Semantics] module, so as to make all of its
+   operations available in the semantic actions. *)
+
+%{
+
+  open Semantics
+
+%}
 
 %%
 
-%public expr:
+main:
+| e = expr EOL
+    { e }
+
+expr:
 | i = INT
-    { i }
+    { inject i }
 | LPAREN e = expr RPAREN
     { e }
 | e1 = expr PLUS e2 = expr
