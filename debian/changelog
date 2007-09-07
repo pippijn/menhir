@@ -1,3 +1,9 @@
+menhir (20070520-2) unstable; urgency=low
+
+  * Rebuild with OCaml 3.10.
+
+ -- Samuel Mimram <smimram@debian.org>  Sat, 08 Sep 2007 01:30:14 +0200
+
 menhir (20070520-1) unstable; urgency=low
 
   * New upstream release.
