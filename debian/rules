@@ -13,6 +13,7 @@
 include /usr/share/dpatch/dpatch.make
 
 DESTDIR := $(CURDIR)/debian/menhir
+OCAMLABI := $(shell ocamlc -version)
 
 build: build-stamp
 build-stamp: patch-stamp
@@ -66,7 +67,7 @@ binary-arch: build install
 	dh_fixperms
 	dh_installdeb
 	dh_shlibdeps
-	dh_gencontrol
+	dh_gencontrol -- -VF:OCamlABI="$(OCAMLABI)"
 	dh_md5sums
 	dh_builddeb
 

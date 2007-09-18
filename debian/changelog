@@ -1,3 +1,9 @@
+menhir (20070520-3) UNRELEASED; urgency=low
+
+  * Tighten dependency on ocaml-nox.
+
+ -- Samuel Mimram <smimram@debian.org>  Tue, 18 Sep 2007 23:18:15 +0000
+
 menhir (20070520-2) unstable; urgency=low
 
   * Rebuild with OCaml 3.10.
