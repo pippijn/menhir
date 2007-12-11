@@ -11,44 +11,18 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(* $Id: infiniteArray.ml,v 1.6 2007/09/10 21:09:37 fpottier Exp $ *)
+(* A debugging pretty-printer for [IL]. Newlines are used liberally, so as to
+   facilitate diffs. *)
 
-(** This module implements infinite arrays, that is, arrays that grow
-    transparently upon demand. *)
+module Make (X : sig
 
-type 'a t = {
-    default: 'a;
-    mutable table: 'a array
-  } 
+  (* This is the channel that is being written to. *)
 
-let default_size =
-  16384 (* must be non-zero *)
+  val f: out_channel
 
-let make x = {
-  default = x;
-  table = Array.make default_size x
-} 
+end) : sig
 
-let rec new_length length i =
-  if i < length then
-    length
-  else
-    new_length (2 * length) i
+  val expr: IL.expr -> unit
 
-let ensure a i =
-  let table = a.table in
-  let length = Array.length table in
-  if i >= length then begin
-    let table' = Array.make (new_length (2 * length) i) a.default in
-    Array.blit table 0 table' 0 length;
-    a.table <- table'
-  end
-
-let get a i =
-  ensure a i;
-  a.table.(i)
-
-let set a i x =
-  ensure a i;
-  a.table.(i) <- x
+end
 

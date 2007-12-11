@@ -15,4 +15,5 @@
 
 val program: IL.program
 
-
+val is_statecon: string -> bool (* TEMPORARY *)
+val tstate: IL.typ

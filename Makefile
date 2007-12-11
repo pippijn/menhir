@@ -63,5 +63,5 @@ uninstall:
 	rm -rf $(bindir)/menhir
 	rm -rf $(libdir)
 	rm -rf $(docdir)
-	rm -rf $(mandir)
+	rm -rf $(mandir)/$(MANS)
 

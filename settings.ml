@@ -87,6 +87,9 @@ let depend =
 let code_inlining =
   ref true
 
+let code_sharing =
+  ref false
+
 let comment =
   ref false
 
@@ -119,6 +122,7 @@ let options = Arg.align [
   "--comment", Arg.Set comment, " Include comments in the generated code";
   "--depend", Arg.Unit (fun () -> depend := OMPostprocess), " Invoke ocamldep and display dependencies";
   "--dump", Arg.Set dump, " Describe the automaton in <basename>.automaton";
+  "--enable-code-sharing", Arg.Set code_sharing, " (undocumented -- currently broken)";
   "--error-recovery", Arg.Set recovery, " Attempt recovery by discarding tokens after errors";
   "--explain", Arg.Set explain, " Explain conflicts in <basename>.conflicts";
   "--external-tokens", Arg.String codeonly, "<module> Import token type definition from <module>";
@@ -225,6 +229,9 @@ let infer =
 
 let code_inlining =
   !code_inlining
+
+let code_sharing =
+  !code_sharing
 
 let depend =
   !depend

@@ -1,3 +1,14 @@
+2007/12/05:
+Disabled code sharing by default, as it is currently broken.
+
+2007/12/01:
+Added an optimization to share code among states that have identical
+outgoing transition tables.
+
+2007/08/30:
+Small Makefile change: create an executable file for check-ocaml-version in
+order to work around the absence of dynamic loading on some platforms.
+
 2007/05/20:
 Made a fundamental change in the construction of the LR(1) automaton
 in order to eliminate a bug that could lead to spurious conflicts --

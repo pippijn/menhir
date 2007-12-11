@@ -21,12 +21,12 @@ let program =
 (* Perform inlining. *)
 
 let program =
-  if Settings.code_inlining then
-    let program = Inliner.inline program in
-    Time.tick "Inlining";
-    program
-  else
-    program
+  Inliner.inline program
+
+(* Perform code sharing. *)
+
+let program =
+  CodeSharing.share program
 
 (* Emit the code. *)
 
