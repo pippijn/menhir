@@ -1,8 +1,9 @@
-menhir (20070520-3) UNRELEASED; urgency=low
+menhir (20071205.dfsg-1) unstable; urgency=low
 
+  * New upstream release.
   * Tighten dependency on ocaml-nox.
 
- -- Samuel Mimram <smimram@debian.org>  Tue, 18 Sep 2007 23:18:15 +0000
+ -- Samuel Mimram <smimram@debian.org>  Tue, 11 Dec 2007 00:45:36 +0000
 
 menhir (20070520-2) unstable; urgency=low
 
