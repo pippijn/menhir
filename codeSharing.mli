@@ -11,44 +11,11 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(* $Id: infiniteArray.ml,v 1.6 2007/09/10 21:09:37 fpottier Exp $ *)
+(* This module performs some code sharing. It is typically able to share
+   the [run] functions for states that have identical transition tables.
+   Its implementation is ad hoc. It was deemed easier to implement a
+   separate pass than to modify the code generator to perform sharing
+   in the first place. *)
 
-(** This module implements infinite arrays, that is, arrays that grow
-    transparently upon demand. *)
-
-type 'a t = {
-    default: 'a;
-    mutable table: 'a array
-  } 
-
-let default_size =
-  16384 (* must be non-zero *)
-
-let make x = {
-  default = x;
-  table = Array.make default_size x
-} 
-
-let rec new_length length i =
-  if i < length then
-    length
-  else
-    new_length (2 * length) i
-
-let ensure a i =
-  let table = a.table in
-  let length = Array.length table in
-  if i >= length then begin
-    let table' = Array.make (new_length (2 * length) i) a.default in
-    Array.blit table 0 table' 0 length;
-    a.table <- table'
-  end
-
-let get a i =
-  ensure a i;
-  a.table.(i)
-
-let set a i x =
-  ensure a i;
-  a.table.(i) <- x
+val share: IL.program -> IL.program
 

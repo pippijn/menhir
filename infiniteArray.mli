@@ -11,7 +11,7 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(* $Id: infiniteArray.mli,v 1.4 2005/12/01 16:20:06 regisgia Exp $ *)
+(* $Id: infiniteArray.mli,v 1.5 2007/09/10 21:09:37 fpottier Exp $ *)
 
 (** This module implements infinite arrays. **)
 type 'a t
@@ -27,4 +27,3 @@ val get: 'a t -> int -> 'a
     [a] to [x]. Slots are numbered 0 and up. **)
 val set: 'a t -> int -> 'a -> unit
 
-val iteri: (int -> 'a -> unit) -> 'a t -> unit

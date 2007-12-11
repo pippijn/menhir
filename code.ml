@@ -329,6 +329,25 @@ let statecon s =
 let estatecon s =
   EData (statecon s, [])
 
+let rec begins_with s1 s2 i1 i2 n1 n2 =
+  if i1 = n1 then
+    true
+  else if i2 = n2 then
+    false
+  else if String.unsafe_get s1 i1 = String.unsafe_get s2 i2 then
+    begins_with s1 s2 (i1 + 1) (i2 + 1) n1 n2
+  else
+    false
+
+let begins_with s1 s2 =
+  begins_with s1 s2 0 0 (String.length s1) (String.length s2)
+
+(* This predicate tells whether a data constructor represents a state.
+   It is based on the name, which is inelegant and inefficient. TEMPORARY *)
+
+let is_statecon : string -> bool =
+  begins_with (dataprefix "State")
+
 let pstatecon s =
   PData (statecon s, [])
 
@@ -422,6 +441,9 @@ let insertif condition x =
 
 let var x : expr =
   EVar x
+
+let vars xs =
+  List.map var xs
 
 let pvar x : pattern =
   PVar x
@@ -1144,7 +1166,13 @@ let errorparams magic var =
   [ var env; magic (var stack) ]
 
 let call_error magic s =
-   EApp (EVar (error s), errorparams magic var)
+  EApp (EVar (error s), errorparams magic var)
+
+let call_error_via_errorcase magic s = (* TEMPORARY document *)
+  if Invariant.represented s then
+    EApp (EVar errorcase, [ var env; magic (var stack); estatecon s ])
+  else
+    call_error magic s
 
 (* Calls to [assertfalse]. *)
 
@@ -1154,7 +1182,7 @@ let call_assertfalse =
 (* ------------------------------------------------------------------------ *)
 (* Emit a warning when a state can do error recovery but does not
    accept EOF. This can lead to non-termination if the end of file
-   is reached why attempting to recover from an error. *)
+   is reached while attempting to recover from an error. *)
 
 let check_recoverer covered s =
   match Terminal.eof with
@@ -1317,7 +1345,7 @@ let gettoken s defred e =
 	incr errorpeekers;
 	EIfThenElse (
 	  EApp (EVar "Pervasives.(=)", [ ERecordAccess (EVar env, fshifted); EIntConst (-1) ]),
-	  tracecomment "Resuming error handling" (call_error nomagic s),
+	  tracecomment "Resuming error handling" (call_error_via_errorcase magic s),
 	  blet ([ PVar token, ERecordAccess (EVar env, ftoken) ], e)
         )
       end
@@ -1426,12 +1454,12 @@ let initiate covered s =
 	  ],
 	  call_action s
 	),
-	errorbookkeeping (call_error nomagic s)
+	errorbookkeeping (call_error_via_errorcase magic s)
       )
 
     end
     else
-      errorbookkeeping (call_error nomagic s)
+      errorbookkeeping (call_error_via_errorcase magic s)
 
   )
 

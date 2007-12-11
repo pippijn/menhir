@@ -97,6 +97,11 @@ val noprefix: bool
 
 val code_inlining: bool
 
+(* This undocument flag causes the code to be transformed by
+   [CodeSharing]. It is off by default. *)
+
+val code_sharing: bool
+
 (* How [ocamlc] and [ocamldep] should be invoked. *)
 
 val ocamlc: string

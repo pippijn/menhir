@@ -285,5 +285,12 @@ let inline ({ valdefs = defs } as p : program) =
     Printf.fprintf f "%d functions before inlining, %d functions after inlining.\n"
        before (List.length valdefs));
   
+  Time.tick "Inlining";
+
   { p with valdefs = valdefs }
+
+(* The external entry point. *)
+
+let inline p =
+  if Settings.code_inlining then inline p else p
 

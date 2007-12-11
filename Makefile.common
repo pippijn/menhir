@@ -66,17 +66,15 @@ GENERATED    := stdlib.ml lexmli.ml lexer.ml parser.mli parser.ml lineCount.ml l
 
 # A list of the modules that must be linked in.
 
-MODULES      :=								\
-   stringSet stringMap mark compressedBitSet unionFind tarjan patricia	\
-   infiniteArray misc option breadth listMonad dot			\
-   stdlib version settings time positions error				\
-   parameters keyword lineCount printer action parserAux parser lexer	\
-   partialGrammar parameterizedGrammar reachability			\
-   unparameterizedPrinter preFront					\
+MODULES := stringSet stringMap mark compressedBitSet unionFind tarjan	\
+   patricia infiniteArray misc option breadth listMonad dot stdlib	\
+   version settings time positions error parameters keyword lineCount	\
+   printer rawPrinter action parserAux parser lexer partialGrammar	\
+   parameterizedGrammar reachability unparameterizedPrinter preFront	\
    codeBits tokenType interface IO lexmli lexdep infer			\
-   nonTerminalDefinitionInlining front					\
-   grammar item lr0 lr1 lr1partial derivation conflict		        \
-   invariant code traverse inliner back
+   nonTerminalDefinitionInlining front grammar item lr0 lr1 lr1partial	\
+   derivation conflict invariant code traverse inliner codeSharing	\
+   back
 
 OBJECTS      := $(MODULES:=.cmo)
 XBJECTS      := $(MODULES:=.cmx)
@@ -201,9 +199,15 @@ clean::
 # the native code compiler. We assume that both compilers, if present, are in
 # sync.
 
+# We build a bytecode executable (rather than use the toplevel loop) because
+# we need to load str.cma and some ocaml ports do not support dynamic loading
+# (e.g. ocaml 3.09, MacOS/Intel).
+
 .versioncheck:
 	@ echo Checking that Objective Caml is recent enough...
-	@ $(CAMLTOP) str.cma check-ocaml-version.ml --verbose --gt "3.09"
+	@ $(CAMLC) -o check-ocaml-version str.cma check-ocaml-version.ml
+	@ ./check-ocaml-version --verbose --gt "3.09"
+	@ rm check-ocaml-version
 	@ touch .versioncheck
 
 clean::
