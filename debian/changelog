@@ -1,3 +1,10 @@
+menhir (20071212.dfsg-1) unstable; urgency=low
+
+  * New upstream release.
+  * Updated standards version, no changes needed.
+
+ -- Samuel Mimram <smimram@debian.org>  Sat, 22 Dec 2007 00:46:17 +0100
+
 menhir (20071205.dfsg-1) unstable; urgency=low
 
   * New upstream release.
