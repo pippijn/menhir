@@ -18,15 +18,15 @@ open UnparameterizedSyntax
 let program =
   Code.program
 
-(* Perform inlining. *)
-
-let program =
-  Inliner.inline program
-
 (* Perform code sharing. *)
 
 let program =
   CodeSharing.share program
+
+(* Perform inlining. *)
+
+let program =
+  Inliner.inline program
 
 (* Emit the code. *)
 
