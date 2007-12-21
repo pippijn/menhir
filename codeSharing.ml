@@ -293,13 +293,12 @@ let share (program : program) : program =
 
   (* Done. *)
 
-  { program with valdefs = !output }
+  { program with valdefs = List.rev !output }
 
 (* ------------------------------------------------------------------------ *)
 
 (* The external entry point. *)
 
 let share p =
-  if Settings.code_sharing then (* Inliner.inline *) (share p) else p
-  (* TEMPORARY one could inline again after code sharing? *)
+  if Settings.code_sharing then share p else p
 
