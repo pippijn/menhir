@@ -1,3 +1,9 @@
+menhir (20071212.dfsg-2) UNRELEASED; urgency=low
+
+  * fix vcs-svn field to point just above the debian/ dir
+
+ -- Stefano Zacchiroli <zack@debian.org>  Mon, 31 Dec 2007 16:50:01 +0100
+
 menhir (20071212.dfsg-1) unstable; urgency=low
 
   * New upstream release.

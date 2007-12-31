@@ -4,7 +4,7 @@ Priority: optional
 Maintainer: Samuel Mimram <smimram@debian.org>
 Build-Depends: debhelper (>= 4.0.0), dpatch, ocaml-nox (>= 3.10), ocaml-findlib
 Standards-Version: 3.7.3
-Vcs-Svn: svn://svn.debian.org/svn/pkg-ocaml-maint/trunk/packages/menhir
+Vcs-Svn: svn://svn.debian.org/svn/pkg-ocaml-maint/trunk/packages/menhir/trunk
 Vcs-Browser: http://svn.debian.org/wsvn/pkg-ocaml-maint/trunk/packages/menhir/trunk/
 
 Package: menhir
