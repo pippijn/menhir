@@ -1,8 +1,12 @@
-menhir (20071212.dfsg-2) UNRELEASED; urgency=low
+menhir (20071212.dfsg-1.0.1) UNRELEASED; urgency=low
 
+  [ Stefano Zacchiroli ]
   * fix vcs-svn field to point just above the debian/ dir
 
- -- Stefano Zacchiroli <zack@debian.org>  Mon, 31 Dec 2007 16:50:01 +0100
+  [ Ralf Treinen ]
+  * Rebuild for ocaml 3.10.2
+
+ -- Ralf Treinen <treinen@debian.org>  Sat, 22 Mar 2008 20:53:52 +0100
 
 menhir (20071212.dfsg-1) unstable; urgency=low
 
