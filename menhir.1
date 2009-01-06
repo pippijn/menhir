@@ -32,9 +32,6 @@ is a LR(1) parser generator for the Objective Caml programming language. That is
 .B \-h, \-\-help
 Show summary of options.
 .TP
-.B \-v, \-\-version
-Show version of program.
-.TP
 .BI \-b,\ \-\-base\  basename
 Specifies a base name for the output file(s).
 .TP
@@ -60,11 +57,17 @@ Import token type definition from
 .IR module .
 .TP
 .B \-\-graph
-Write the grammar's dependency graph to
+Write grammar's dependency graph to
 .IR basename .dot.
 .TP
 .B \-\-infer
 Invoke ocamlc for ahead of time type inference.
+.TP
+.B \-\-interpret
+Interpret the sentences provided on stdin.
+.TP
+.B \-\-interpret\-show\-cst
+Show a concrete syntax tree upon acceptance.
 .TP
 .BI \-la,\ \-\-log\-automaton\  level
 Log information about the automaton.
@@ -75,14 +78,8 @@ Log information about the generated code.
 .BI \-lg,\ \-\-log\-grammar\  level
 Log information about the grammar.
 .TP
-.B \-\-no\-code\-inlining
-(undocumented)
-.TP
 .B \-\-no\-inline
 Ignore the %inline keyword.
-.TP
-.B \-\-no\-prefix
-(undocumented)
 .TP
 .B \-\-no\-stdlib
 Do not load the standard library.
@@ -99,14 +96,32 @@ Print a simplified grammar and exit.
 .B \-\-only\-tokens
 Generate token type definition only, no code.
 .TP
+.B \-\-raw\-depend
+Invoke ocamldep and echo its raw output.
+.TP
+.BI \-\-stdlib\  directory
+Specify where the standard library lies.
+.TP
+.B \-\-suggest\-comp\-flags
+Suggest compilation flags for ocaml{c,opt}.
+.TP
+.B \-\-suggest\-link\-flags-byte
+Suggest link flags for ocamlc.
+.TP
+.B \-\-suggest\-link\-flags-opt
+Suggest link flags for ocamlopt.
+.TP
+.B \-t, \-\-table
+Use the table-based back-end.
+.TP
 .B \-\-timings
 Display internal timings.
 .TP
 .B \-\-trace
 Include tracing instructions in the generated code.
 .TP
-.BI \-\-stdlib\  directory
-Specify where the standard library lies.
+.B \-\-version
+Show version number and exit.
 .TP
 .B \-v
 Synonymous with

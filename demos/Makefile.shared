@@ -1,16 +1,3 @@
-##########################################################################
-#                                                                        #
-#  Menhir                                                                #
-#                                                                        #
-#  François Pottier and Yann Régis-Gianas, INRIA Rocquencourt            #
-#                                                                        #
-#  Copyright 2005 Institut National de Recherche en Informatique et      #
-#  en Automatique. All rights reserved. This file is distributed         #
-#  under the terms of the Q Public License version 1.0, with the         #
-#  change described in file LICENSE.                                     #
-#                                                                        #
-##########################################################################
-
 # This Makefile is shared between all demos. It is our suggestion
 # of a canonical Makefile for projects that use Objective Caml,
 # ocamllex, and menhir. It requires a recent version of GNU make
@@ -38,6 +25,17 @@
 
 # The host Makefile can also override the following settings:
 
+# Menhir.
+
+ifndef MENHIR
+  MENHIR         := menhir
+endif
+
+# Parser generation flags.
+ifndef PGFLAGS
+  PGFLAGS        := --infer -v
+endif
+
 # Include directives for compilation and for linking.
 
 ifndef INCLUDE
@@ -55,9 +53,19 @@ ifndef OFLAGS
   OFLAGS         := 
 endif
 
+# Menhir-suggested compilation flags.
+ifndef SUGG_FLAGS
+  SUGG_FLAGS     := $(shell $(MENHIR) $(PGFLAGS) --suggest-comp-flags 2>/dev/null)
+endif
+
 # Bytecode link-time flags.
 ifndef BLNKFLAGS
-   BLNKFLAGS      := 
+  BLNKFLAGS      := 
+endif
+
+# Menhir-suggested bytecode link-time flags.
+ifndef SUGG_BLNKFLAGS
+  SUGG_BLNKFLAGS := $(shell $(MENHIR) $(PGFLAGS) --suggest-link-flags-byte 2>/dev/null)
 endif
 
 # Native code link-time flags.
@@ -65,9 +73,9 @@ ifndef OLNKFLAGS
   OLNKFLAGS      := 
 endif
 
-# Parser generation flags.
-ifndef PGFLAGS
-  PGFLAGS        := --infer -v
+# Menhir-suggested native code link-time flags.
+ifndef SUGG_OLNKFLAGS
+  SUGG_OLNKFLAGS := $(shell $(MENHIR) $(PGFLAGS) --suggest-link-flags-opt 2>/dev/null)
 endif
 
 # Suffix appended to the name of the bytecode executable.
@@ -118,10 +126,6 @@ ifndef OCAMLLEX
   OCAMLLEX       := ocamllex
 endif
 
-ifndef MENHIR
-  MENHIR         := menhir
-endif
-
 # A list of targets that do not require dependency analysis.
 # This variable should be set by the host before including
 # this Makefile.
@@ -138,10 +142,10 @@ COLD           += clean
 # Linking.
 
 $(EXECUTABLE)$(OSUFFIX): $(MODULES:=.cmx)
-	$(OCAMLOPT) -o $@ $(INCLUDE) $(OLNKFLAGS) $^
+	$(OCAMLOPT) -o $@ $(INCLUDE) $(OLNKFLAGS) $(SUGG_FLAGS) $(SUGG_OLNKFLAGS) $^
 
 $(EXECUTABLE)$(BSUFFIX): $(MODULES:=.cmo)
-	$(OCAMLC) -o $@ $(INCLUDE) $(BLNKFLAGS) $^
+	$(OCAMLC) -o $@ $(INCLUDE) $(BLNKFLAGS) $(SUGG_FLAGS) $(SUGG_BLNKFLAGS) $^
 
 # ----------------------------------------------------------------
 
@@ -151,13 +155,13 @@ $(EXECUTABLE)$(BSUFFIX): $(MODULES:=.cmo)
 # unwritable, so as to prevent them from being edited by mistake.
 
 %.cmi: %.mli %.mli.d
-	$(OCAMLC) $(INCLUDE) $(BFLAGS) -c $<
+	$(OCAMLC) $(INCLUDE) $(BFLAGS) $(SUGG_FLAGS) -c $<
 
 %.cmo: %.ml %.ml.d
-	$(OCAMLC) $(INCLUDE) $(BFLAGS) -c $<
+	$(OCAMLC) $(INCLUDE) $(BFLAGS) $(SUGG_FLAGS) -c $<
 
 %.cmx %.o: %.ml %.ml.d
-	$(OCAMLOPT) $(INCLUDE) $(OFLAGS) -c $<
+	$(OCAMLOPT) $(INCLUDE) $(OFLAGS) $(SUGG_FLAGS) -c $<
 
 %.ml: %.mll
 	@if [ -f $@ ] ; then /bin/chmod +w $@ ; fi
