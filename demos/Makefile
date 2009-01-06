@@ -1,27 +1,14 @@
-##########################################################################
-#                                                                        #
-#  Menhir                                                                #
-#                                                                        #
-#  François Pottier and Yann Régis-Gianas, INRIA Rocquencourt            #
-#                                                                        #
-#  Copyright 2005 Institut National de Recherche en Informatique et      #
-#  en Automatique. All rights reserved. This file is distributed         #
-#  under the terms of the Q Public License version 1.0, with the         #
-#  change described in file LICENSE.                                     #
-#                                                                        #
-##########################################################################
-
 DEMOS := calc calc-two calc-param
 
 .PHONY: all clean
 
 all:
 	@for i in $(DEMOS) ; do \
-	  $(MAKE) -C $$i $(MFLAGS) ; \
+	  $(MAKE) -C $$i ; \
 	done
 
 clean:
 	/bin/rm -f *~ .*~ *.omc
 	@for i in $(DEMOS) ; do \
-	  $(MAKE) -C $$i $(MFLAGS) clean ; \
+	  $(MAKE) -C $$i clean ; \
 	done

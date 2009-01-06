@@ -1,16 +1,3 @@
-##########################################################################
-#                                                                        #
-#  Menhir                                                                #
-#                                                                        #
-#  François Pottier and Yann Régis-Gianas, INRIA Rocquencourt            #
-#                                                                        #
-#  Copyright 2005 Institut National de Recherche en Informatique et      #
-#  en Automatique. All rights reserved. This file is distributed         #
-#  under the terms of the Q Public License version 1.0, with the         #
-#  change described in file LICENSE.                                     #
-#                                                                        #
-##########################################################################
-
 # This OMakefile is designed for projects that use Objective Caml,
 # ocamllex, menhir, and alphaCaml.
 
@@ -34,6 +21,18 @@
 
 # The host OMakefile can override the following default settings.
 
+# Menhir.
+
+if $(not $(defined MENHIR))
+    MENHIR           = menhir
+    export
+
+# Parser generation flags.
+
+if $(not $(defined MENHIR_FLAGS))
+    MENHIR_FLAGS          = --infer -v
+    export
+
 # Include directives for compilation and for linking.
 
 if $(not $(defined PREFIXED_OCAMLINCLUDES))
@@ -52,10 +51,20 @@ if $(not $(defined OFLAGS))
     OFLAGS           = -dtypes
     export
 
+# Menhir-suggested compilation flags.
+if $(not $(defined SUGG_FLAGS))
+    SUGG_FLAGS       = $(shell $(MENHIR) $(MENHIR_FLAGS) --suggest-comp-flags 2>/dev/null)
+    export
+
 # Bytecode link-time flags.
 
 if $(not $(defined BLNKFLAGS))
     BLNKFLAGS        = -g
+    export
+
+# Menhir-suggested bytecode link-time flags.
+if $(not $(defined SUGG_BLNKFLAGS))
+    SUGG_BLNKFLAGS       = $(shell $(MENHIR) $(MENHIR_FLAGS) --suggest-link-flags-byte 2>/dev/null)
     export
 
 # Native code link-time flags.
@@ -64,16 +73,15 @@ if $(not $(defined OLNKFLAGS))
     OLNKFLAGS        =
     export
 
+# Menhir-suggested native code link-time flags.
+if $(not $(defined SUGG_OLNKFLAGS))
+    SUGG_OLNKFLAGS       = $(shell $(MENHIR) $(MENHIR_FLAGS) --suggest-link-flags-opt 2>/dev/null)
+    export
+
 # Lexer generation flags.
 
 if $(not $(defined LGFLAGS))
     LGFLAGS          = 
-    export
-
-# Parser generation flags.
-
-if $(not $(defined MENHIR_FLAGS))
-    MENHIR_FLAGS          = --infer -v
     export
 
 # Suffix appended to the name of the bytecode executable.
@@ -138,10 +146,6 @@ if $(not $(defined OCAMLLEX))
     OCAMLLEX         = ocamllex
     export
 
-if $(not $(defined MENHIR))
-    MENHIR           = menhir
-    export
-
 if $(not $(defined ALPHACAML))
     ALPHACAML        = alphaCaml
     export
@@ -170,13 +174,13 @@ WrapScanner(command) =
 # Compilation.
 
 %.cmi: %.mli
-	$(OCAMLC) $(PREFIXED_OCAMLINCLUDES) $(BFLAGS) -c $<
+	$(OCAMLC) $(PREFIXED_OCAMLINCLUDES) $(BFLAGS) $(SUGG_FLAGS) -c $<
 
 %.cmo: %.ml
-	$(OCAMLC) $(PREFIXED_OCAMLINCLUDES) $(BFLAGS) -c $<
+	$(OCAMLC) $(PREFIXED_OCAMLINCLUDES) $(BFLAGS) $(SUGG_FLAGS) -c $<
 
 %.cmx %.o: %.ml
-	$(OCAMLOPT) $(PREFIXED_OCAMLINCLUDES) $(OFLAGS) -c $<
+	$(OCAMLOPT) $(PREFIXED_OCAMLINCLUDES) $(OFLAGS) $(SUGG_FLAGS) -c $<
 
 %.ml: %.mll
 	$(OCAMLLEX) $(LGFLAGS) $<
@@ -189,10 +193,10 @@ WrapScanner(command) =
 # Linking.
 
 $(EXECUTABLE)$(OSUFFIX): $(addsuffix .cmx, $(MODULES))
-	$(OCAMLOPT) -o $@ $(PREFIXED_OCAMLINCLUDES) $(OLNKFLAGS) $+
+	$(OCAMLOPT) -o $@ $(PREFIXED_OCAMLINCLUDES) $(OLNKFLAGS) $(SUGG_FLAGS) $(SUGG_OLNKFLAGS) $+
 
 $(EXECUTABLE)$(BSUFFIX): $(addsuffix .cmo, $(MODULES))
-	$(OCAMLC) -o $@ $(PREFIXED_OCAMLINCLUDES) $(BLNKFLAGS) $+
+	$(OCAMLC) -o $@ $(PREFIXED_OCAMLINCLUDES) $(BLNKFLAGS) $(SUGG_FLAGS) $(SUGG_BLNKFLAGS) $+
 
 # ----------------------------------------------------------------
 

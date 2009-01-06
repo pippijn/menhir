@@ -1,5 +1,19 @@
+2008/09/05:
+Ocaml summer project: added --interpret, --table, and --suggest-*.
+
+2008/08/06:
+Fixed a problem that would cause the code inliner to abort when a semantic
+value and a non-terminal symbol happened to have the same name.
+
+2008/08/06:
+Removed code sharing.
+
+2008/06/20:
+Removed an incorrect assertion that caused failures (lr1.ml, line 134).
+
 2007/12/05:
-Disabled code sharing by default, as it is currently broken.
+Disabled code sharing by default, as it is currently broken. (See Yann's
+message; assertion failure at runtime.)
 
 2007/12/01:
 Added an optimization to share code among states that have identical

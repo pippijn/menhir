@@ -1,15 +1,23 @@
-##########################################################################
-#                                                                        #
-#  Menhir                                                                #
-#                                                                        #
-#  François Pottier and Yann Régis-Gianas, INRIA Rocquencourt            #
-#                                                                        #
-#  Copyright 2005 Institut National de Recherche en Informatique et      #
-#  en Automatique. All rights reserved. This file is distributed         #
-#  under the terms of the Q Public License version 1.0, with the         #
-#  change described in file LICENSE.                                     #
-#                                                                        #
-##########################################################################
+# This is the main Makefile that is shipped as part of the source package.
+# Keep in mind that the hierarchy that is shipped is not identical to the
+# hierarchy within the svn repository: some sub-directories are not shipped;
+# the documentation is pre-built.
+
+# The hierarchy that is shipped includes:
+#   demos
+#   menhir.1
+#   manual.pdf
+#   src
+#   Makefile (this one)
+
+# ----------------------------------------------------------------------------
+
+# By default, we attempt to use ocamlfind (if present in the PATH), but it it
+# is possible to prevent that externally by setting USE_OCAMLFIND to false.
+
+ifndef USE_OCAMLFIND
+  USE_OCAMLFIND = ocamlfind ocamlc -v >/dev/null 2>&1
+endif
 
 # ----------------------------------------------------------------------------
 # Installation paths.
@@ -26,42 +34,57 @@ libdir	        := ${PREFIX}/share/menhir
 mandir          := ${PREFIX}/share/man/man1
 MANS            := menhir.1
 DOCS            := manual.pdf demos
-LIBS            := standard.mly
+MLYLIB          := src/standard.mly
+MENHIRLIB       := menhirLib.cmi menhirLib.cmo menhirLib.cmx menhirLib.o
 
 # ----------------------------------------------------------------------------
-# Common compilation rules.
+# Compilation.
 
 .PHONY: all install uninstall
 
-COLD            += all install uninstall
+all: src/menhir
 
-all: menhir
+src/menhir: src/installation.ml
+	$(MAKE) -C src -f Makefile
+	$(MAKE) -C src -f Makefile lib
 
--include Makefile.common
+# Record some installation time settings within the menhir binary.
 
-# ----------------------------------------------------------------------------
-# Recording the standard library path that was chosen at installation
-# time.
-
-stdlib.ml:
-	echo "let path = \"${PREFIX}/share/menhir\"" > stdlib.ml
+src/installation.ml:
+	echo "let libdir = \"${libdir}\"" > $@
+	if $(USE_OCAMLFIND) ; then \
+	  echo "let ocamlfind = true" >> $@ ; \
+	else \
+	  echo "let ocamlfind = false" >> $@ ; \
+	fi
 
 # ----------------------------------------------------------------------------
 # Installation.
 
-install:
+install: src/menhir
 	mkdir -p $(bindir)
 	mkdir -p $(libdir)
 	mkdir -p $(docdir)
 	mkdir -p $(mandir)
-	install menhir $(bindir)
-	install -m 644 $(LIBS) $(libdir)
+	install src/menhir $(bindir)
+	install -m 644 $(MLYLIB) $(libdir)
 	cp -r $(DOCS) $(docdir)
 	cp -r $(MANS) $(mandir)
+	@cd src && if $(USE_OCAMLFIND) ; then \
+	  echo Installing MenhirLib via ocamlfind. ; \
+	  ocamlfind install menhirLib META $(MENHIRLIB) ; \
+	else \
+	  echo Installing MenhirLib manually. ; \
+	  install -m 644 $(MENHIRLIB) $(libdir) ; \
+	fi
 
 uninstall:
 	rm -rf $(bindir)/menhir
 	rm -rf $(libdir)
 	rm -rf $(docdir)
 	rm -rf $(mandir)/$(MANS)
+	@if $(USE_OCAMLFIND) ; then \
+	  echo Un-installing MenhirLib via ocamlfind. ; \
+	  ocamlfind remove menhirLib ; \
+	fi
 
