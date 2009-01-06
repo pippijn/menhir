@@ -1,9 +1,14 @@
-menhir (20071212.dfsg-1.0.1) UNRELEASED; urgency=low
+menhir (20080912.dfsg-1) UNRELEASED; urgency=low
 
   [ Stefano Zacchiroli ]
   * fix vcs-svn field to point just above the debian/ dir
 
- -- Ralf Treinen <treinen@debian.org>  Sat, 22 Mar 2008 20:53:52 +0100
+  [ Mehdi Dogguy ]
+  * Add myself to uploaders and set d-o-m as maintainer
+  * Bump standards version to 3.8.0
+  * Change Vcs-* flags to point to git repository
+
+ -- Mehdi Dogguy <dogguy@pps.jussieu.fr>  Tue, 06 Jan 2009 17:25:31 +0100
 
 menhir (20071212.dfsg-1) unstable; urgency=low
 

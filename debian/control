@@ -1,11 +1,12 @@
 Source: menhir
 Section: devel
 Priority: optional
-Maintainer: Samuel Mimram <smimram@debian.org>
+Maintainer: Debian OCaml Maintainers <debian-ocaml-maint@lists.debian.org>
+Uploaders: Samuel Mimram <smimram@debian.org>, Mehdi Dogguy <dogguy@pps.jussieu.fr>
 Build-Depends: debhelper (>= 4.0.0), dpatch, ocaml-nox (>= 3.10), ocaml-findlib
-Standards-Version: 3.7.3
-Vcs-Svn: svn://svn.debian.org/svn/pkg-ocaml-maint/trunk/packages/menhir/trunk
-Vcs-Browser: http://svn.debian.org/wsvn/pkg-ocaml-maint/trunk/packages/menhir/trunk/
+Standards-Version: 3.8.0
+Vcs-Git: git://git.debian.org/git/pkg-ocaml-maint/packages/menhir.git
+Vcs-Browser: http://git.debian.org/?p=pkg-ocaml-maint/packages/menhir.git
 
 Package: menhir
 Architecture: any
