@@ -34,7 +34,7 @@ clean: unpatch
 	dh_testroot
 	rm -f build-stamp configure-stamp
 
-	$(MAKE) clean PREFIX=$(CURDIR)/debian/menhir/usr
+	$(MAKE) -C src/ clean PREFIX=$(CURDIR)/debian/menhir/usr
 
 	dh_clean
 
@@ -45,8 +45,9 @@ install: build
 	dh_installdirs
 
 #	$(MAKE) install PREFIX=$(CURDIR)/debian/menhir/usr
-	cp menhir $(DESTDIR)/usr/bin/
-	cp standard.mly $(DESTDIR)/usr/share/menhir/
+	cp src/menhir $(DESTDIR)/usr/bin/
+	cp src/standard.mly $(DESTDIR)/usr/share/menhir/
+	cp -r demos/ $(DESTDIR)/usr/share/doc/menhir/
 
 
 # Build architecture-independent files here.

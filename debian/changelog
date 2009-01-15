@@ -1,14 +1,11 @@
 menhir (20080912.dfsg-1) UNRELEASED; urgency=low
 
-  [ Stefano Zacchiroli ]
-  * fix vcs-svn field to point just above the debian/ dir
+  * Add myself to uploaders and set d-o-m as maintainer.
+  * Bump standards version to 3.8.0, no changes needed.
+  * Change Vcs-* flags to point to git repository.
+  * Update debian/rules: All source files are now in src/
 
-  [ Mehdi Dogguy ]
-  * Add myself to uploaders and set d-o-m as maintainer
-  * Bump standards version to 3.8.0
-  * Change Vcs-* flags to point to git repository
-
- -- Mehdi Dogguy <dogguy@pps.jussieu.fr>  Tue, 06 Jan 2009 17:25:31 +0100
+ -- Mehdi Dogguy <dogguy@pps.jussieu.fr>  Thu, 15 Jan 2009 11:28:24 +0100
 
 menhir (20071212.dfsg-1) unstable; urgency=low
 
