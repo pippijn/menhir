@@ -1,11 +1,12 @@
 menhir (20080912.dfsg-1) UNRELEASED; urgency=low
 
+  * New upstream release, (Closes: #500699).
   * Add myself to uploaders and set d-o-m as maintainer.
   * Bump standards version to 3.8.0, no changes needed.
   * Change Vcs-* flags to point to git repository.
   * Update debian/rules: All source files are now in src/
 
- -- Mehdi Dogguy <dogguy@pps.jussieu.fr>  Thu, 15 Jan 2009 11:28:24 +0100
+ -- Mehdi Dogguy <dogguy@pps.jussieu.fr>  Thu, 15 Jan 2009 11:41:39 +0100
 
 menhir (20071212.dfsg-1) unstable; urgency=low
 
