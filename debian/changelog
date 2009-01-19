@@ -6,12 +6,14 @@ menhir (20080912.dfsg-1) UNRELEASED; urgency=low
   * Bump standards version to 3.8.0, no changes needed.
   * Change Vcs-* flags to point to git repository.
   * Update debian/rules: All source files are now in src/
-  * Bump debhelper compat to 7.
+  * Bump debhelper compat to 7 and shorten debian/rules
+  * Add src_Makefile.dpatch to not try to build cmx files on non-native
+    architectures.
 
   [ Samuel Mimram ]
   * Mangle .dfsg in version in watch file.
 
- -- Mehdi Dogguy <dogguy@pps.jussieu.fr>  Mon, 19 Jan 2009 09:22:56 +0100
+ -- Mehdi Dogguy <dogguy@pps.jussieu.fr>  Mon, 19 Jan 2009 14:15:51 +0100
 
 menhir (20071212.dfsg-1) unstable; urgency=low
 
