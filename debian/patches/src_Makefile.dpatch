@@ -1,0 +1,21 @@
+#! /bin/sh /usr/share/dpatch/dpatch-run
+## 02_src_Makefile.dpatch by Mehdi Dogguy <dogguy@pps.jussieu.fr>
+##
+## DP: Do not try to build .cmx on non-native architectures.
+
+@DPATCH@
+diff -urNad menhir~/src/Makefile menhir/src/Makefile
+--- menhir~/src/Makefile	2009-01-19 13:57:50.000000000 +0100
++++ menhir/src/Makefile	2009-01-19 13:58:51.000000000 +0100
+@@ -246,5 +246,10 @@
+ 
+ # Building menhirLib.
+ 
+-lib: menhirLib.cmo menhirLib.cmi menhirLib.cmx menhirLib.o
++ifeq ($(TARGET),byte)
++lib: menhirLib.cmo menhirLib.cmi
++else
++ lib: menhirLib.cmo menhirLib.cmi menhirLib.cmx menhirLib.o
++
++endif
+ 
