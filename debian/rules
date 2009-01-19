@@ -37,7 +37,7 @@ binary-indep: install-stamp
 # Build architecture-dependent files here.
 binary-arch: install-stamp
 ifeq ($(TARGET),byte)
-	echo 'F:OCamlABI=ocaml-base-nox-$(OCAMLABI)' >> debian/menhir.substvars
+	echo 'F:OCamlRuntime=ocaml-base-nox-$(OCAMLABI)' >> debian/menhir.substvars
 endif
 	dh $@
 

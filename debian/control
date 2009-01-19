@@ -10,7 +10,7 @@ Vcs-Browser: http://git.debian.org/?p=pkg-ocaml-maint/packages/menhir.git
 
 Package: menhir
 Architecture: any
-Depends: ${F:OCamlABI}, ${shlibs:Depends}
+Depends: ${F:OCamlRuntime}, ${shlibs:Depends}
 Description: Parser generator for OCaml
  Menhir is a LR(1) parser generator for OCaml. It is mostly compatible
  with the standard ocamlyacc and has the following enhancements:
