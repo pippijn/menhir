@@ -1,76 +1,45 @@
 #!/usr/bin/make -f
 # -*- makefile -*-
-# Sample debian/rules that uses debhelper.
-# This file was originally written by Joey Hess and Craig Small.
-# As a special exception, when this file is copied by dh-make into a
-# dh-make output file, you may use that output file without restriction.
-# This special exception was added by Craig Small in version 0.37 of dh-make.
 
 # Uncomment this to turn on verbose mode.
 #export DH_VERBOSE=1
 
-# Include dpatch stuff.
 include /usr/share/dpatch/dpatch.make
 
 DESTDIR := $(CURDIR)/debian/menhir
 OCAMLABI := $(shell ocamlc -version)
+IS_NATIVE:= $(wildcard /usr/bin/ocamlopt)
+TARGET   := $(if $(IS_NATIVE),opt,byte)
 
 build: build-stamp
 build-stamp: patch-stamp
 	dh_testdir
-	if [ -e /usr/bin/ocamlopt ]; then \
-		($(MAKE) TARGET=opt PREFIX=/usr;) \
-		|| (echo WARNING: NATIVE CODE COMPILATION FAILED \
-		    && echo Trying to build in bytecode instead \
-		    && $(MAKE) TARGET=byte PREFIX=/usr \
-		    && echo WARNING: NATIVE CODE COMPILATION FAILED) \
-	else \
-		$(MAKE) TARGET=byte PREFIX=/usr; \
-	fi
-	touch build-stamp
+	$(MAKE) TARGET=$(TARGET) PREFIX=/usr
+	dh build --after auto_build
+	touch $@
 
 clean: unpatch
-	dh_testdir
-	dh_testroot
-	rm -f build-stamp configure-stamp
-
+	dh clean
 	$(MAKE) -C src/ clean PREFIX=$(CURDIR)/debian/menhir/usr
 
-	dh_clean
-
-install: build
-	dh_testdir
-	dh_testroot
-	dh_prep
-	dh_installdirs
-
-#	$(MAKE) install PREFIX=$(CURDIR)/debian/menhir/usr
+install: build install-stamp
+install-stamp:
+	dh install --before auto_install
 	cp src/menhir $(DESTDIR)/usr/bin/
 	cp src/standard.mly $(DESTDIR)/usr/share/menhir/
-	cp -r demos/ $(DESTDIR)/usr/share/doc/menhir/
-
+	cp -r demos $(DESTDIR)/usr/share/doc/menhir/
+	dh install --after auto_install
+	touch $@
 
 # Build architecture-independent files here.
-binary-indep: build install
+binary-indep: install-stamp
 
 # Build architecture-dependent files here.
-binary-arch: build install
-	dh_testdir
-	dh_testroot
-	dh_installchangelogs CHANGES
-	dh_installdocs
-	dh_installexamples
-	dh_install
-	dh_installman menhir.1
-	dh_link
-	dh_strip
-	dh_compress -X.pdf
-	dh_fixperms
-	dh_installdeb
-	dh_shlibdeps
-	dh_gencontrol -- -VF:OCamlABI="$(OCAMLABI)"
-	dh_md5sums
-	dh_builddeb
+binary-arch: install-stamp
+ifeq ($(TARGET),byte)
+	echo 'F:OCamlABI=ocaml-base-nox-$(OCAMLABI)' >> debian/menhir.substvars
+endif
+	dh $@
 
 binary: binary-indep binary-arch
 .PHONY: build clean binary-indep binary-arch binary install configure patch unpatch
