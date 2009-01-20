@@ -9,11 +9,12 @@ menhir (20080912.dfsg-1) UNRELEASED; urgency=low
   * Bump debhelper compat to 7 and shorten debian/rules
   * Add src_Makefile.dpatch to not try to build cmx files on non-native
     architectures.
+  * Add Homepage field to debian/control.
 
   [ Samuel Mimram ]
   * Mangle .dfsg in version in watch file.
 
- -- Mehdi Dogguy <dogguy@pps.jussieu.fr>  Mon, 19 Jan 2009 14:15:51 +0100
+ -- Mehdi Dogguy <dogguy@pps.jussieu.fr>  Tue, 20 Jan 2009 16:32:26 +0100
 
 menhir (20071212.dfsg-1) unstable; urgency=low
 
