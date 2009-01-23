@@ -10,11 +10,13 @@ menhir (20080912.dfsg-1) UNRELEASED; urgency=low
   * Add src_Makefile.dpatch to not try to build cmx files on non-native
     architectures.
   * Add Homepage field to debian/control.
+  * Install menhirLib
+  * Remove ocamlfind from build-dependency: not used.
 
   [ Samuel Mimram ]
   * Mangle .dfsg in version in watch file.
 
- -- Mehdi Dogguy <dogguy@pps.jussieu.fr>  Tue, 20 Jan 2009 16:32:26 +0100
+ -- Mehdi Dogguy <dogguy@pps.jussieu.fr>  Fri, 23 Jan 2009 12:43:54 +0100
 
 menhir (20071212.dfsg-1) unstable; urgency=low
 
