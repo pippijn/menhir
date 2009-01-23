@@ -10,6 +10,7 @@ DESTDIR := $(CURDIR)/debian/menhir
 OCAMLABI := $(shell ocamlc -version)
 IS_NATIVE:= $(wildcard /usr/bin/ocamlopt)
 TARGET   := $(if $(IS_NATIVE),opt,byte)
+STRIPOPT := -e "$(if $(IS_NATIVE),,/native/d)"
 
 build: build-stamp
 build-stamp: patch-stamp
@@ -28,6 +29,9 @@ install-stamp:
 	cp src/menhir $(DESTDIR)/usr/bin/
 	cp src/standard.mly $(DESTDIR)/usr/share/menhir/
 	cp -r demos $(DESTDIR)/usr/share/doc/menhir/
+	mkdir -p $(DESTDIR)/usr/lib/ocaml/$(OCAMLABI)/menhirLib/
+	sed $(STRIPOPT) src/META > $(DESTDIR)/usr/lib/ocaml/$(OCAMLABI)/menhirLib/META
+	cp src/menhirLib.* $(DESTDIR)/usr/lib/ocaml/$(OCAMLABI)/menhirLib/
 	dh install --after auto_install
 	touch $@
 
