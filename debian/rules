@@ -15,7 +15,7 @@ STRIPOPT := -e "$(if $(IS_NATIVE),,/native/d)"
 build: build-stamp
 build-stamp: patch-stamp
 	dh_testdir
-	$(MAKE) TARGET=$(TARGET) PREFIX=/usr
+	$(MAKE) TARGET=$(TARGET) PREFIX=$(CURDIR)/debian/menhir/usr
 	dh build --after auto_build
 	touch $@
 
@@ -42,6 +42,8 @@ binary-indep: install-stamp
 binary-arch: install-stamp
 ifeq ($(TARGET),byte)
 	echo 'F:OCamlRuntime=ocaml-base-nox-$(OCAMLABI)' >> debian/menhir.substvars
+else
+	echo 'F:OCamlRuntime=' >> debian/menhir.substvars
 endif
 	dh $@
 
