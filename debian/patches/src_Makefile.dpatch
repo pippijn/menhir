@@ -5,9 +5,9 @@
 
 @DPATCH@
 diff -urNad menhir~/src/Makefile menhir/src/Makefile
---- menhir~/src/Makefile	2009-01-19 14:24:29.000000000 +0100
-+++ menhir/src/Makefile	2009-01-23 11:21:11.000000000 +0100
-@@ -246,5 +246,9 @@
+--- menhir~/src/Makefile	2009-02-18 16:45:36.000000000 +0100
++++ menhir/src/Makefile	2009-02-18 16:55:40.000000000 +0100
+@@ -249,4 +249,8 @@
  
  # Building menhirLib.
  
@@ -16,4 +16,3 @@ diff -urNad menhir~/src/Makefile menhir/src/Makefile
 +else
  lib: menhirLib.cmo menhirLib.cmi menhirLib.cmx menhirLib.o
 +endif
- 
