@@ -19,7 +19,8 @@ Package: menhir
 Architecture: any
 Depends:
   ${F:OCamlRuntime},
-  ${shlibs:Depends}
+  ${shlibs:Depends},
+  ${misc:Depends}
 Description: Parser generator for OCaml
  Menhir is a LR(1) parser generator for OCaml. It is mostly compatible
  with the standard ocamlyacc and has the following enhancements:
