@@ -4,6 +4,8 @@ menhir (20080912.dfsg-1) experimental; urgency=low
   * New upstream release, (Closes: #500699).
   * Add myself to uploaders and set d-o-m as maintainer.
   * Bump standards version to 3.8.0, no changes needed.
+  * Bump ocaml version to 3.11
+  * Add build-dependency on dh-ocaml
   * Change Vcs-* flags to point to git repository.
   * Update debian/rules: All source files are now in src/
   * Bump debhelper compat to 7 and shorten debian/rules
@@ -16,7 +18,7 @@ menhir (20080912.dfsg-1) experimental; urgency=low
   [ Samuel Mimram ]
   * Mangle .dfsg in version in watch file.
 
- -- Mehdi Dogguy <dogguy@pps.jussieu.fr>  Fri, 23 Jan 2009 12:43:54 +0100
+ -- Mehdi Dogguy <dogguy@pps.jussieu.fr>  Wed, 18 Feb 2009 16:18:24 +0100
 
 menhir (20071212.dfsg-1) unstable; urgency=low
 
