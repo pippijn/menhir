@@ -1,3 +1,7 @@
+2009/02/04:
+A Makefile fix to avoid a problem under Windows/Cygwin.
+Renamed the ocaml-check-version script so as to avoid a warning.
+
 2008/09/05:
 Ocaml summer project: added --interpret, --table, and --suggest-*.
 

@@ -39,7 +39,7 @@ CAMLYACC        := ocamlyacc -v
 BFLAGS       := -g
 OFLAGS       := -inline 1000
 LNKBFLAGS    := -g
-LNKOFLAGS    := 
+LNKOFLAGS    :=
 BLIBS        := unix.cma
 OLIBS        := unix.cmxa
 PGFLAGS      := -v -lg 1 -la 1 -lc 1 --comment --infer --error-recovery --stdlib .
@@ -147,7 +147,10 @@ menhir.opt: $(MODULES:=.cmx)
 
 .depend: $(wildcard *.ml *.mli) $(GENERATED)
 	@/bin/rm -f .depend
-	$(CAMLDEPWRAPPER) menhirLib.ml menhirLib.mli - $(CAMLDEP) *.ml *.mli > $@
+	for i in *.ml *.mli; do \
+           $(CAMLDEPWRAPPER) menhirLib.ml menhirLib.mli - $(CAMLDEP) $$i \
+        >> $@; \
+	done
 
 ifeq ($(findstring $(MAKECMDGOALS),$(COLD)),)
 -include .depend
@@ -234,7 +237,7 @@ sentenceParser.ml sentenceParser.mli : sentenceParser.mly
 
 .versioncheck:
 	@ echo Checking that Objective Caml is recent enough...
-	@ $(CAMLC) -o check-ocaml-version str.cma check-ocaml-version.ml
+	@ $(CAMLC) -o check-ocaml-version str.cma checkOCamlVersion.ml
 	@ ./check-ocaml-version --verbose --gt "3.09"
 	@ rm check-ocaml-version
 	@ touch .versioncheck
@@ -247,4 +250,3 @@ clean::
 # Building menhirLib.
 
 lib: menhirLib.cmo menhirLib.cmi menhirLib.cmx menhirLib.o
-
