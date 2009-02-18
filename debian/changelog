@@ -1,4 +1,4 @@
-menhir (20080912.dfsg-2) UNRELEASED; urgency=low
+menhir (20080912.dfsg-2) experimental; urgency=low
 
   * Bump ocaml version to 3.11
   * Add build-dependency on dh-ocaml
