@@ -3,8 +3,9 @@ menhir (20090204.dfsg-1) UNRELEASED; urgency=low
   * New Upstream Version
   * Add dependency ${misc:Depends}, thanks zack.
   * Update src_Makefile.dpatch
+  * Add DMUA flag with Sam's blessing. 
 
- -- Mehdi Dogguy <dogguy@pps.jussieu.fr>  Wed, 18 Feb 2009 17:02:14 +0100
+ -- Mehdi Dogguy <dogguy@pps.jussieu.fr>  Wed, 18 Feb 2009 18:11:13 +0100
 
 menhir (20080912.dfsg-2) experimental; urgency=low
 

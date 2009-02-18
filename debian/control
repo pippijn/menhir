@@ -11,6 +11,7 @@ Build-Depends:
   ocaml-nox (>= 3.11.0),
   dh-ocaml
 Standards-Version: 3.8.0
+DM-Upload-Allowed: yes
 Homepage: http://gallium.inria.fr/~fpottier/menhir/
 Vcs-Git: git://git.debian.org/git/pkg-ocaml-maint/packages/menhir.git
 Vcs-Browser: http://git.debian.org/?p=pkg-ocaml-maint/packages/menhir.git
