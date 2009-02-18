@@ -23,7 +23,7 @@ module Make (X : sig
 
   val f: out_channel
 
-  (* If [raw_stretch_action] is set, then we print the semantic actions 
+  (* If [raw_stretch_action] is set, then we print the semantic actions
      as they are found into the original source code. *)
   val raw_stretch_action: bool
 
@@ -264,17 +264,17 @@ let rec member e k =
   | ETextual _
   | EApp (_, [])
   | EData (_, [])
-  | ETuple _ 
+  | ETuple _
   | EAnnot _
   | ERecord _
   | ERecordAccess (_, _)
   | EIntConst _
   | EStringConst _
-  | EUnit 
-  | EArray _ 
+  | EUnit
+  | EArray _
   | EArrayAccess (_, _) ->
       true
-      
+
 
 let rec exprlet k pes f e2 =
   match pes with
@@ -286,7 +286,7 @@ let rec exprlet k pes f e2 =
       (* TEMPORARY current ocaml does not support type schemes here; drop quantifiers, if any *)
       fprintf f "let %s : %a = %a in%t%a" id1 typ ts1.body (* scheme ts1 *) expr e1 nl (exprlet k pes) e2
   | (PVar id1, EFun (ps1, e1)) :: pes ->
-      fprintf f "let %s%a = %a in%t%t%a" 
+      fprintf f "let %s%a = %a in%t%t%a"
 	id1 (list pat0 space) ps1 (indent 2 expr) e1 nl nl (exprlet k pes) e2
   | (p1, (ELet _ as e1)) :: pes ->
       fprintf f "let %a =%a%tin%t%a" pat p1 (indent 2 expr) e1 nl nl (exprlet k pes) e2
@@ -423,7 +423,7 @@ and fpat f = function
 
 and array_field f e =
   fprintf f "%a%t" app e seminl
-  
+
 and pat0 f = function
   | PUnit ->
       fprintf f "()"
@@ -496,7 +496,7 @@ and typ1 f = function
       fprintf f "%a%a" typ0 t (list typ0 times) ts
   | t ->
       typ0 f t
-  
+
 and typ2 f = function
   | TypArrow (t1, t2) ->
       fprintf f "%a -> %a" typ1 t1 typ2 t2
@@ -615,7 +615,7 @@ let functorparams intf body b f params =
 	(indent 2 body) b
 	nl nl nl
 
-let structure f p = 
+let structure f p =
   fprintf f "struct%aend" (
     indent 2 (fun f p ->
       fprintf f "%t%a%a%a"
@@ -625,7 +625,7 @@ let structure f p =
 	nonrecvaldefs p.struct_nonrecvaldefs
     )
   ) p
-    
+
 
 let rec modexpr f = function
   | MVar x ->
@@ -639,10 +639,11 @@ let moduledef f d =
   fprintf f "module %s = %a%t%t" d.modulename modexpr d.modulerhs nl nl
 
 let program f p =
-  List.iter (stretch false f) p.prologue;
-  fprintf f "%a%a%a%a%a"
+  fprintf f "%a%a"
     excdefs p.excdefs
-    typedefs p.typedefs
+    typedefs p.typedefs;
+  List.iter (stretch false f) p.prologue;
+  fprintf f "%a%a%a"
     nonrecvaldefs p.nonrecvaldefs
     (list moduledef nothing) p.moduledefs
     valdefs p.valdefs;
@@ -660,7 +661,7 @@ let program p =
 let interface i =
   functorparams true interface i X.f i.paramdecls
 
-let expr e = 
+let expr e =
   expr X.f e
 
 end
