@@ -1,3 +1,9 @@
+menhir (20090204.dfsg-2) UNRELEASED; urgency=low
+
+  * Depend on ocaml-nox, Closes: #516134.
+
+ -- Mehdi Dogguy <dogguy@pps.jussieu.fr>  Thu, 19 Feb 2009 23:41:32 +0100
+
 menhir (20090204.dfsg-1) experimental; urgency=low
 
   * New Upstream Version
