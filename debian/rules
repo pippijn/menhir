@@ -26,7 +26,7 @@ ocamlinit-clean:
 build: ocamlinit build-stamp
 build-stamp: patch-stamp
 	dh_testdir
-	$(MAKE) TARGET=$(TARGET) PREFIX=$(CURDIR)/debian/menhir/usr
+	$(MAKE) TARGET=$(TARGET) PREFIX=/usr
 	dh build --after auto_build
 	touch $@
 
