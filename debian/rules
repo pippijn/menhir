@@ -1,32 +1,26 @@
 #!/usr/bin/make -f
 # -*- makefile -*-
 
-#export DH_VERBOSE=1
+export DH_VERBOSE=1
 
 include /usr/share/dpatch/dpatch.make
+include /usr/share/ocaml/ocamlvars.mk
+include /usr/share/ocaml/ocamlinit.mk
 
 DESTDIR := $(CURDIR)/debian/menhir
-OCAMLABI := $(shell ocamlc -version)
-IS_NATIVE:= $(wildcard /usr/bin/ocamlopt)
-TARGET   := $(if $(IS_NATIVE),opt,byte)
-STRIPOPT := -e "$(if $(IS_NATIVE),,/native/d)"
-OCAML_IN_FILES := $(filter-out debian/control,$(patsubst %.in,%,$(wildcard debian/*.in)))
+ifeq ($(OCAML_HAVE_OCAMLOPT), yes)
+  TARGET   := opt
+else
+  TARGET   := byte
+endif
 
-ocamlinit: ocamlinit-stamp
-ocamlinit-stamp:
-	for t in $(OCAML_IN_FILES); do \
-          sed -e 's%@OCAMLABI@%$(OCAMLABI)%' $$t.in > $$t; \
-        done
-	sed $(STRIPOPT) src/META > META
-	touch $@
-
-ocamlinit-clean:
-	rm -f $(OCAML_IN_FILES)
-
-build: ocamlinit build-stamp
+build: ocamlinit-stamp build-stamp
 build-stamp: patch-stamp
 	dh_testdir
 	$(MAKE) TARGET=$(TARGET) PREFIX=/usr
+ifeq ($(OCAML_HAVE_OCAMLOPT), no)
+	sed -e "/native/d" src/META > META
+endif
 	dh build --after auto_build
 	touch $@
 
@@ -41,12 +35,10 @@ install-stamp:
 	dh install --after auto_install
 	touch $@
 
-# Build architecture-independent files here.
 binary-indep: install-stamp
 
-# Build architecture-dependent files here.
 binary-arch: install-stamp
-	echo 'F:OCamlAbi=$(OCAMLABI)' >> debian/menhir.substvars
+	echo 'F:OCamlAbi=$(OCAML_ABI)' >> debian/menhir.substvars
 	dh $@
 
 binary: binary-indep binary-arch
