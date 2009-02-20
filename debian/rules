@@ -8,30 +8,24 @@ include /usr/share/ocaml/ocamlvars.mk
 include /usr/share/ocaml/ocamlinit.mk
 
 DESTDIR := $(CURDIR)/debian/menhir
-ifeq ($(OCAML_HAVE_OCAMLOPT), yes)
-  TARGET   := opt
-else
-  TARGET   := byte
-endif
+STRIPOPT := $(if $(OCAML_OPT_ARCH),-e "/native/d",-e "")
 
 build: ocamlinit-stamp build-stamp
 build-stamp: patch-stamp
 	dh_testdir
-	$(MAKE) TARGET=$(TARGET) PREFIX=/usr
-ifeq ($(OCAML_HAVE_OCAMLOPT), no)
-	sed -e "/native/d" src/META > META
-endif
+	$(MAKE) TARGET=$(OCAML_BEST) PREFIX=/usr
+	sed $(STRIPOPT) src/META > META
 	dh build --after auto_build
 	touch $@
 
 clean: unpatch ocamlinit-clean
 	dh clean
-	$(MAKE) -C src/ clean PREFIX=$(CURDIR)/debian/menhir/usr
+	$(MAKE) -C src/ clean PREFIX=$(DESTDIR)/usr
 
 install: build install-stamp
 install-stamp:
 	dh install --before auto_install
-	cp src/menhir.$(TARGET) $(DESTDIR)/usr/bin/menhir
+	cp src/menhir.$(OCAML_BEST) $(DESTDIR)/usr/bin/menhir
 	dh install --after auto_install
 	touch $@
 
