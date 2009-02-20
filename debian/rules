@@ -8,7 +8,7 @@ include /usr/share/ocaml/ocamlvars.mk
 include /usr/share/ocaml/ocamlinit.mk
 
 DESTDIR := $(CURDIR)/debian/menhir
-STRIPOPT := $(if $(OCAML_OPT_ARCH),-e "/native/d",-e "")
+STRIPOPT := $(if $(OCAML_OPT_ARCH),-e "",-e "/native/d")
 
 build: ocamlinit-stamp build-stamp
 build-stamp: patch-stamp
