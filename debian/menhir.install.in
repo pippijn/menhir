@@ -1,4 +1,2 @@
 src/standard.mly	usr/share/menhir
 demos			usr/share/doc/menhir
-src/menhirLib.*		@OCamlStdlibDir@/menhirLib/
-META			@OCamlStdlibDir@/menhirLib/
