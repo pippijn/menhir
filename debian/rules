@@ -32,7 +32,8 @@ install-stamp:
 binary-indep: install-stamp
 
 binary-arch: install-stamp
-	echo 'F:OCamlAbi=$(OCAML_ABI)' >> debian/menhir.substvars
+	echo 'F:OCamlRuntime=ocaml-base-nox-$(OCAML_ABI)' >> debian/menhir.substvars
+	echo 'F:OCamlAbi=$(OCAML_ABI)' >> debian/libmenhir-ocaml-dev.substvars
 	dh $@
 
 binary: binary-indep binary-arch

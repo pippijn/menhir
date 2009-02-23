@@ -19,7 +19,7 @@ Vcs-Browser: http://git.debian.org/?p=pkg-ocaml-maint/packages/menhir.git
 Package: menhir
 Architecture: any
 Depends:
-  ocaml-nox-${F:OCamlAbi},
+  ${F:OCamlRuntime},
   ${shlibs:Depends},
   ${misc:Depends}
 Description: Parser generator for OCaml
