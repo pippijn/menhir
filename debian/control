@@ -9,7 +9,7 @@ Build-Depends:
   debhelper (>= 7.0.0),
   dpatch,
   ocaml-nox (>= 3.11.0),
-  dh-ocaml (>= 0.3)
+  dh-ocaml (>= 0.4)
 Standards-Version: 3.8.0
 DM-Upload-Allowed: yes
 Homepage: http://gallium.inria.fr/~fpottier/menhir/
