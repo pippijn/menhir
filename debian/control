@@ -32,3 +32,13 @@ Description: Parser generator for OCaml
   * it allows grammar specifications to be split over multiple files and
     parametrized by OCaml modules,
   * it produces reentrant parsers.
+
+Package: libmenhir-ocaml-dev
+Section: libdevel
+Architecture: any
+Depends:
+  ocaml-nox-${F:OCamlAbi},
+  ${shlibs:Depends},
+  ${misc:Depends}
+Description: Menhir library for OCaml
+ This packages contains Menhir library for OCaml.
