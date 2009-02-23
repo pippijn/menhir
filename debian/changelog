@@ -1,10 +1,11 @@
 menhir (20090204.dfsg-2) UNRELEASED; urgency=low
 
-  * Depend on ocaml-nox, Closes: #516134.
+  * New binary package libmenhir-ocaml-dev, Closes: #516134.
   * Use dh-ocaml predefined variables.
-  * Use predefined variable OCAML_BEST (dh-ocaml >= 0.3).
+  * Use predefined variable OCAML_BEST (dh-ocaml >= 0.4).
+  * debian/svn-deblayout: remove no longer needed SVN setting
 
- -- Mehdi Dogguy <dogguy@pps.jussieu.fr>  Fri, 20 Feb 2009 10:18:45 +0100
+ -- Mehdi Dogguy <dogguy@pps.jussieu.fr>  Sun, 22 Feb 2009 23:41:17 +0100
 
 menhir (20090204.dfsg-1) experimental; urgency=low
 
