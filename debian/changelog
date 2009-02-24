@@ -1,4 +1,4 @@
-menhir (20090204.dfsg-2) UNRELEASED; urgency=low
+menhir (20090204.dfsg-2) unstable; urgency=low
 
   * New binary package libmenhir-ocaml-dev, Closes: #516134.
   * Use dh-ocaml predefined variables.
