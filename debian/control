@@ -41,4 +41,10 @@ Depends:
   ${shlibs:Depends},
   ${misc:Depends}
 Description: Menhir library for OCaml
- This packages contains Menhir library for OCaml.
+ This package contains the Menhir library for OCaml. It gives access to,
+ among others, the following modules:
+  * InfiniteArray: implements infinite arrays, that is, arrays
+    that grow transparently upon demand.
+  * RowDisplacement: compresses a two-dimensional table, where some
+    values are considered insignificant, via row displacement.
+  * Engine: LR parsing engine.
