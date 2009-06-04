@@ -1,6 +1,7 @@
 menhir (20090204.dfsg-3) unstable; urgency=low
 
   * More verbose description for libmenhir-ocaml-dev, Closes: #518666.
+  * Move libmenhir-ocaml-dev to the new ocaml section.
 
  -- Mehdi Dogguy <dogguy@pps.jussieu.fr>  Mon, 09 Mar 2009 18:46:42 +0100
 

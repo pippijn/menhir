@@ -34,7 +34,7 @@ Description: Parser generator for OCaml
   * it produces reentrant parsers.
 
 Package: libmenhir-ocaml-dev
-Section: libdevel
+Section: ocaml
 Architecture: any
 Depends:
   ocaml-nox-${F:OCamlAbi},
