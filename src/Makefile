@@ -249,4 +249,8 @@ clean::
 
 # Building menhirLib.
 
+ifeq ($(TARGET),byte)
+lib: menhirLib.cmo menhirLib.cmi
+else
 lib: menhirLib.cmo menhirLib.cmi menhirLib.cmx menhirLib.o
+endif

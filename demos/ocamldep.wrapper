@@ -24,16 +24,28 @@ let rec loop accumulating i =
   if i = Array.length Sys.argv then
     ()
   else if accumulating then
+    (* [accumulating] is [true] as long as we have not found the "-" marker *)
     match Sys.argv.(i) with
     | "-v" ->
 	verbose := true;
 	loop true (i+1)
     | "-" ->
+        (* We have found the marker. The next parameter should be the name of
+	   the raw [ocamldep] command. Copy it to the command (unquoted --
+	   apparently some shells do not permit quoting a command name). *)
+	let i = i + 1 in
+	assert (i < Array.length Sys.argv);
+	command := Sys.argv.(i);
+	(* Stop accumulating file names. Copy the remaining arguments into
+	   the command. *)
 	loop false (i+1)
     | _ ->
+        (* Continue accumulating file names in [xs]. *)
 	xs := Sys.argv.(i) :: !xs;
 	loop true (i+1)
   else begin
+    (* After we have found the "-" marker, the remaining arguments are
+       copied (quoted) into the command. *)
     command := sprintf "%s %s" !command (Filename.quote Sys.argv.(i));
     loop false (i+1)
   end
@@ -74,4 +86,3 @@ let rec loop = function
 
 let () =
   exit (loop !xs)
-
