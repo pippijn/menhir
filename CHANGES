@@ -1,3 +1,7 @@
+2009/02/06:
+Fixed ocamldep.wrapper to avoid quoting the name of the ocaml command.
+This is hoped to fix a compilation problem under MinGW.
+
 2009/02/04:
 A Makefile fix to avoid a problem under Windows/Cygwin.
 Renamed the ocaml-check-version script so as to avoid a warning.
