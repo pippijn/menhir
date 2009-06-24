@@ -4,6 +4,7 @@ menhir (20090505.dfsg-1) unstable; urgency=low
   * More verbose description for libmenhir-ocaml-dev, Closes: #518666.
   * Move libmenhir-ocaml-dev to the new ocaml section.
   * Drop src_Makefile.dpatch: integrated upstream.
+  * Build-dep on ocaml >= 3.11.1
 
  -- Mehdi Dogguy <dogguy@pps.jussieu.fr>  Wed, 24 Jun 2009 23:04:37 +0200
 
