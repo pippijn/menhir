@@ -9,7 +9,7 @@ Build-Depends:
   debhelper (>= 7.0.0),
   dpatch,
   ocaml-nox (>= 3.11.1),
-  dh-ocaml (>= 0.4)
+  dh-ocaml (>= 0.9)
 Standards-Version: 3.8.0
 DM-Upload-Allowed: yes
 Homepage: http://gallium.inria.fr/~fpottier/menhir/
@@ -19,7 +19,7 @@ Vcs-Browser: http://git.debian.org/?p=pkg-ocaml-maint/packages/menhir.git
 Package: menhir
 Architecture: any
 Depends:
-  ${F:OCamlRuntime},
+  ${ocaml:Depends},
   ${shlibs:Depends},
   ${misc:Depends}
 Description: Parser generator for OCaml
@@ -37,9 +37,11 @@ Package: libmenhir-ocaml-dev
 Section: ocaml
 Architecture: any
 Depends:
-  ocaml-nox-${F:OCamlAbi},
+  ${ocaml:Depends},
   ${shlibs:Depends},
   ${misc:Depends}
+Provides:
+  ${ocaml:Provides}
 Description: Menhir library for OCaml
  This package contains the Menhir library for OCaml. It gives access to,
  among others, the following modules:
