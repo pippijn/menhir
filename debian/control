@@ -4,14 +4,13 @@ Priority: optional
 Maintainer: Debian OCaml Maintainers <debian-ocaml-maint@lists.debian.org>
 Uploaders:
   Samuel Mimram <smimram@debian.org>,
-  Mehdi Dogguy <dogguy@pps.jussieu.fr>
+  Mehdi Dogguy <mehdi@debian.org>
 Build-Depends:
   debhelper (>= 7.0.0),
   dpatch,
   ocaml-nox (>= 3.11.1-2),
   dh-ocaml (>= 0.9)
 Standards-Version: 3.8.0
-DM-Upload-Allowed: yes
 Homepage: http://gallium.inria.fr/~fpottier/menhir/
 Vcs-Git: git://git.debian.org/git/pkg-ocaml-maint/packages/menhir.git
 Vcs-Browser: http://git.debian.org/?p=pkg-ocaml-maint/packages/menhir.git
