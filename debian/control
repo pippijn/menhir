@@ -6,8 +6,8 @@ Uploaders:
   Samuel Mimram <smimram@debian.org>,
   Mehdi Dogguy <mehdi@debian.org>
 Build-Depends:
-  debhelper (>= 7.0.0),
-  dpatch,
+  debhelper (>= 7.0.50),
+  quilt (>= 0.46-7),
   ocaml-nox (>= 3.11.1-2),
   dh-ocaml (>= 0.9)
 Standards-Version: 3.8.3

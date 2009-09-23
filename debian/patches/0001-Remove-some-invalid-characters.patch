@@ -1,0 +1,22 @@
+From: Samuel Mimram <smimram@debian.org>
+Date: Wed, 23 Sep 2009 18:55:38 +0200
+Subject: [PATCH] Remove some invalid characters
+
+---
+ menhir.1 |    2 +-
+ 1 files changed, 1 insertions(+), 1 deletions(-)
+
+diff --git a/menhir.1 b/menhir.1
+index e241b91..ac2940c 100644
+--- a/menhir.1
++++ b/menhir.1
+@@ -134,7 +134,7 @@ Synonymous with
+ 
+ .SH AUTHOR
+ .B menhir
+-was written by François Pottier and Yann Régis-Gianas.
++was written by Fran\(,cois Pottier and Yann R\('egis-Gianas.
+ .PP
+ This manual page was written by Samuel Mimram <smimram@debian.org>,
+ for the Debian project (but may be used by others).
+-- 

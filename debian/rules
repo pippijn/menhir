@@ -17,4 +17,4 @@ override_dh_auto_install:
 	cp src/menhir.$(OCAML_BEST) $(DESTDIR)/usr/bin/menhir
 
 %:
-	dh --with ocaml $@
+	dh --with quilt,ocaml $@

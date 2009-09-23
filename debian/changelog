@@ -4,6 +4,7 @@ menhir (20090505.dfsg-2) unstable; urgency=low
   * Build-dep on ocaml >= 3.11.1-2
   * Use new address and remove DMUA
   * Bump standards to 3.8.3
+  * Convert patches to quilt format and use quilt instead of dpatch
 
  -- Mehdi Dogguy <mehdi@debian.org>  Wed, 23 Sep 2009 18:48:23 +0200
 
