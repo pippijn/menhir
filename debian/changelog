@@ -1,7 +1,7 @@
 menhir (20090505.dfsg-2) unstable; urgency=low
 
   * Use new features of dh-ocaml (0.9).
-  * Build-dep on ocaml >= 3.11.1-3
+  * Build-dep on ocaml >= 3.11.1-3~
   * Use new address and remove DMUA
   * Bump standards to 3.8.3
   * Convert patches to quilt format and use quilt instead of dpatch
