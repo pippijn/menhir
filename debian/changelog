@@ -1,6 +1,7 @@
 menhir (20090505.dfsg-2) unstable; urgency=low
 
-  * Use new features of dh-ocaml.
+  * Use new features of dh-ocaml (0.9).
+  * Build-dep on ocaml >= 3.11.1-2
 
  -- Mehdi Dogguy <dogguy@pps.jussieu.fr>  Fri, 24 Jul 2009 18:07:25 +0200
 
