@@ -1,3 +1,13 @@
+2011/01/24:
+Fixed a bug that would cause an assertion failure in the generated parser
+in some situations where the input stream was incorrect and the grammar
+involved the error token. The fix might cause grammars that use the error
+token to behave differently (hopefully more accurately) as of now.
+
+2009/06/18:
+Makefile changes: build and install only the bytecode version of menhirLib
+when TARGET=byte is set.
+
 2009/02/06:
 Fixed ocamldep.wrapper to avoid quoting the name of the ocaml command.
 This is hoped to fix a compilation problem under MinGW.

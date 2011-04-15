@@ -492,6 +492,57 @@ let eos_compatible  (k1, toksr1) (k2, toksr2) =
   in
   loop 0
 
+(* This function determines whether two (core-equivalent) states can
+   be merged without creating spurious reductions on the [error]
+   token.
+
+   The rule is, we merge two states only if they agree on which
+   reductions are permitted on the [error] token.
+
+   Without this restriction, we might end up in a situation where we
+   decide to introduce an [error] token into the input stream and
+   perform a reduction, whereas a canonical LR(1) automaton,
+   confronted with the same input string, would fail normally -- that
+   is, it would introduce an [error] token into the input stream, but
+   it would not be able to perform a reduction right away: the current
+   state would be discarded.
+
+   In the interest of more accurate (or sane, or predictable) error
+   handling, I decided to introduce this restriction as of 20110124.
+   This will cause an increase in the size of automata for grammars
+   that use the [error] token. It might actually make the [error]
+   token somewhat easier to use.
+
+   Note that two sets can be in the subsumption relation and still
+   be error-incompatible. Error-compatibility requires equality of
+   the lookahead sets, restricted to [error].
+
+   Thanks to Didier Rémy for reporting a bug caused by the absence
+   of this extra criterion. *)
+
+let error_compatible  (k1, toksr1) (k2, toksr2) =
+  assert (k1 = k2);
+  let n = Array.length toksr1 in
+  let rec loop i =
+    if i = n then
+      true
+    else
+      let toks1 = toksr1.(i)
+      and toks2 = toksr2.(i) in
+      begin
+	if TerminalSet.mem Terminal.error toks1 then
+	  (* [error] is a member of one set: it must be a member of the other set. *)
+	  TerminalSet.mem Terminal.error toks2
+	else if TerminalSet.mem Terminal.error toks2 then
+	  (* Symmetric condition. *)
+	  TerminalSet.mem Terminal.error toks1
+	else
+	  true
+      end
+      && loop (i+1)
+  in
+  loop 0
+
 (* Union of two states. The two states must have the same core. The
    new state is obtained by pointwise union of the lookahead sets. *)
 

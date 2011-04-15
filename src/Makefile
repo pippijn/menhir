@@ -1,4 +1,4 @@
-.PHONY: clean lib
+.PHONY: clean
 
 COLD         += clean
 
@@ -204,7 +204,6 @@ PACK = $(shell if echo $(LIBMODULES) | grep $* >/dev/null ; then echo -for-pack 
 parser.ml parser.mli: $(PARSER).mly
 	@/bin/rm -f parser.ml parser.mli
 	$(PGEN) -b parser $<
-	@/bin/chmod -w parser.ml parser.mli
 
 # This parser must be built with ocamlyacc, because its client
 # watches for Parsing.Parse_error!
@@ -217,12 +216,10 @@ parser.ml parser.mli: $(PARSER).mly
 sentenceParser.ml sentenceParser.mli : sentenceParser.mly
 	@/bin/rm -f sentenceParser.ml sentenceParser.mli
 	$(CAMLYACC) -b sentenceParser $<
-	@/bin/chmod -w sentenceParser.ml sentenceParser.mli
 
 %.ml: %.mll
 	@/bin/rm -f $@
 	$(CAMLLEX) $<
-	@/bin/chmod -w $@
 
 # ----------------------------------------------------------------------------
 # Checking the version of the ocaml compiler.
@@ -245,12 +242,3 @@ sentenceParser.ml sentenceParser.mli : sentenceParser.mly
 clean::
 	rm -f .versioncheck
 
-# -------------------------------------------------------------------------
-
-# Building menhirLib.
-
-ifeq ($(TARGET),byte)
-lib: menhirLib.cmo menhirLib.cmi
-else
-lib: menhirLib.cmo menhirLib.cmi menhirLib.cmx menhirLib.o
-endif

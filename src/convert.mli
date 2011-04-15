@@ -41,7 +41,7 @@ type ('token, 'semantic_value) revised =
 
 (* We do not require the type ['token] to actually be a triple type.
    This enables complex applications where it is a record type with
-   more three fields. It also enables simple applications where
+   more than three fields. It also enables simple applications where
    positions are of no interest, so ['token] is just ['raw_token]
    and [get_startp] and [get_endp] return dummy positions. *)
 

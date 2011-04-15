@@ -35,7 +35,16 @@ mandir          := ${PREFIX}/share/man/man1
 MANS            := menhir.1
 DOCS            := manual.pdf demos
 MLYLIB          := src/standard.mly
+
+# -------------------------------------------------------------------------
+
+# Building menhirLib.
+
+ifeq ($(TARGET),byte)
+MENHIRLIB       := menhirLib.cmi menhirLib.cmo
+else
 MENHIRLIB       := menhirLib.cmi menhirLib.cmo menhirLib.cmx menhirLib.o
+endif
 
 # ----------------------------------------------------------------------------
 # Compilation.
@@ -46,7 +55,7 @@ all: src/menhir
 
 src/menhir: src/installation.ml
 	$(MAKE) -C src -f Makefile
-	$(MAKE) -C src -f Makefile lib
+	$(MAKE) -C src -f Makefile $(MENHIRLIB)
 
 # Record some installation time settings within the menhir binary.
 

@@ -284,8 +284,11 @@ let materialize (source : node) (symbol : Symbol.t) (target : Lr0.lr1state) : un
        so, there is no need to create a new node: just reuse the existing
        one. *)
 
+    (* 20110124: require error compatibility in addition to subsumption. *)
+
     List.iter (fun node ->
-      if Lr0.subsume target node.state then
+      if Lr0.subsume target node.state &&
+         Lr0.error_compatible target node.state then
 	raise (Subsumed node)
     ) similar;
 
@@ -293,10 +296,14 @@ let materialize (source : node) (symbol : Symbol.t) (target : Lr0.lr1state) : un
        sense, with the new state. If so, there is no need to create a new
        state: just merge the new state into the existing one. *)
 
+    (* 20110124: require error compatibility in addition to the existing
+       compatibility criteria. *)
+
     if Settings.pager then
       List.iter (fun node ->
 	if Lr0.compatible target node.state &&
-	   Lr0.eos_compatible target node.state then
+	   Lr0.eos_compatible target node.state &&
+	   Lr0.error_compatible target node.state then
 	  raise (Compatible node)
       ) similar;
 
