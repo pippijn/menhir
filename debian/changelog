@@ -1,4 +1,4 @@
-menhir (20110201.dfsg) UNRELEASED; urgency=low
+menhir (20110201.dfsg) unstable; urgency=low
 
   [ Stéphane Glondu ]
   * Do not install examples twice (Closes: #603335)
@@ -7,7 +7,7 @@ menhir (20110201.dfsg) UNRELEASED; urgency=low
   * New upstream release.
   * Set filter-pristine-tar to True in debian/gbp.conf.
 
- -- Mehdi Dogguy <mehdi@debian.org>  Sat, 16 Apr 2011 00:01:51 +0200
+ -- Mehdi Dogguy <mehdi@debian.org>  Sat, 16 Apr 2011 00:12:54 +0200
 
 menhir (20090505.dfsg-2) unstable; urgency=low
 
