@@ -14,8 +14,6 @@
 
 (* The code generator. *)
 
-(* TEMPORARY at some point, suppress all assertions in generated code. *)
-
 (* TEMPORARY env.startp seems to be always equal to env.lexbuf.lex_start_p,
    and similarly for env.endp. Is there a point to copying these
    positions to the env record? Maybe just making these positions
@@ -393,10 +391,18 @@ let magic e : expr =
 let nomagic e =
   e
 
-let assertshifted operator constant : pattern * expr =
+(* [env.shifted] is either [-1], which means that we have an [error] token
+   at the head of the token stream, or a nonnegative number. (The code in
+   [discard], which increments [env.shifted], takes care to avoid overflow.)
+   
+   The following assertion checks that [env.shifted] is not [-1], that is,
+   it is greater than or equal to [0]. Prior to 2011/01/24, two forms of
+   this test co-existed, but it seems more uniform to have just one form. *)
+
+let assertshifted : pattern * expr =
   PUnit,
   EApp (EVar "assert",
-	[ EApp (EVar operator, [ ERecordAccess (EVar env, fshifted); EIntConst constant ]) ])
+	[ EApp (EVar "Pervasives.(<>)", [ ERecordAccess (EVar env, fshifted); EIntConst (-1) ]) ])
 
 let etuple = function
   | [] ->
@@ -1120,7 +1126,7 @@ let gettoken s defred e =
         )
       end
       else
-	blet ([ assertshifted "Pervasives.(<>)" (-1);
+	blet ([ assertshifted;
 		PVar token, ERecordAccess (EVar env, ftoken) ], e)
 
 (* This produces the definition of a [run] function. *)
@@ -1206,7 +1212,7 @@ let errorbookkeeping e =
 let initiate covered s =
 
   blet (
-    [ assertshifted "Pervasives.(>=)" 0 ],
+    [ assertshifted ],
 
     if Invariant.recoverer s then begin
 

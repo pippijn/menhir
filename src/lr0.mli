@@ -98,6 +98,12 @@ val compatible: lr1state -> lr1state -> bool
 
 val eos_compatible: lr1state -> lr1state -> bool
 
+(* This function determines whether two (core-equivalent) states can
+   be merged without creating spurious reductions on the [error]
+   token. *)
+
+val error_compatible: lr1state -> lr1state -> bool
+
 (* Union of two states. The two states must have the same core. The
    new state is obtained by pointwise union of the lookahead sets. *)
 
