@@ -1,4 +1,4 @@
-menhir (20110201.dfsg) unstable; urgency=low
+menhir (20110201.dfsg-1) unstable; urgency=low
 
   [ Stéphane Glondu ]
   * Do not install examples twice (Closes: #603335)
