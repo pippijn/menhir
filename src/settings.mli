@@ -144,3 +144,20 @@ val interpret_show_cst : bool
 
 val table : bool
 
+(* Whether to generate a coq description of the grammar and automaton. *)
+
+val coq : bool
+
+(* Whether the coq description must contain completeness proofs. *)
+
+val coq_no_complete : bool
+
+(* Whether the coq backend should ignore types and semantic actions. *)
+
+val coq_no_actions : bool
+
+(* Whether unresolved LR(1) conflicts, useless precedence declarations,
+   productions that are never reduced, etc. should be treated as errors. *)
+
+val strict: bool
+

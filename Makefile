@@ -20,6 +20,12 @@ ifndef USE_OCAMLFIND
 endif
 
 # ----------------------------------------------------------------------------
+
+# A few settings differ on Windows versus Unix.
+
+include Makefile.arch
+
+# ----------------------------------------------------------------------------
 # Installation paths.
 
 # TEMPORARY GODIVA and Linux do not agree on the standard paths...
@@ -43,39 +49,37 @@ MLYLIB          := src/standard.mly
 ifeq ($(TARGET),byte)
 MENHIRLIB       := menhirLib.cmi menhirLib.cmo
 else
-MENHIRLIB       := menhirLib.cmi menhirLib.cmo menhirLib.cmx menhirLib.o
+MENHIRLIB       := menhirLib.cmi menhirLib.cmo menhirLib.cmx menhirLib.$(OBJ)
 endif
 
 # ----------------------------------------------------------------------------
 # Compilation.
 
+# Installation time settings are recorded within src/installation.ml.
+# This file is recreated every time so as to avoid becoming stale.
+
 .PHONY: all install uninstall
 
-all: src/menhir
-
-src/menhir: src/installation.ml
-	$(MAKE) -C src -f Makefile
-	$(MAKE) -C src -f Makefile $(MENHIRLIB)
-
-# Record some installation time settings within the menhir binary.
-
-src/installation.ml:
-	echo "let libdir = \"${libdir}\"" > $@
+all:
+	rm -f src/installation.ml
+	echo "let libdir = \"${libdir}\"" > src/installation.ml
 	if $(USE_OCAMLFIND) ; then \
-	  echo "let ocamlfind = true" >> $@ ; \
+	  echo "let ocamlfind = true" >> src/installation.ml ; \
 	else \
-	  echo "let ocamlfind = false" >> $@ ; \
+	  echo "let ocamlfind = false" >> src/installation.ml ; \
 	fi
+	$(MAKE) $(MFLAGS) -C src -f Makefile
+	$(MAKE) $(MFLAGS) -C src -f Makefile $(MENHIRLIB)
 
 # ----------------------------------------------------------------------------
 # Installation.
 
-install: src/menhir
+install: all
 	mkdir -p $(bindir)
 	mkdir -p $(libdir)
 	mkdir -p $(docdir)
 	mkdir -p $(mandir)
-	install src/menhir $(bindir)
+	install src/$(MENHIREXE) $(bindir)
 	install -m 644 $(MLYLIB) $(libdir)
 	cp -r $(DOCS) $(docdir)
 	cp -r $(MANS) $(mandir)
@@ -88,7 +92,7 @@ install: src/menhir
 	fi
 
 uninstall:
-	rm -rf $(bindir)/menhir
+	rm -rf $(bindir)/$(MENHIREXE)
 	rm -rf $(libdir)
 	rm -rf $(docdir)
 	rm -rf $(mandir)/$(MANS)
@@ -96,4 +100,3 @@ uninstall:
 	  echo Un-installing MenhirLib via ocamlfind. ; \
 	  ocamlfind remove menhirLib ; \
 	fi
-

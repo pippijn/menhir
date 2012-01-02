@@ -99,7 +99,7 @@ let interpret ((nto, toks) : sentence) : unit =
 	    assert false
 	end
     | None, None ->
-	Error.error
+	Error.error []
 	  "Because the grammar has multiple start symbols, each of the\n\
            sentences provided on the standard input channel must be of the\n\
            form: <start symbol>: <token>*"
@@ -169,7 +169,7 @@ let () =
       try
 	SentenceParser.sentence SentenceLexer.lex lexbuf
       with Parsing.Parse_error ->
-	Error.error_lexbuf lexbuf "Ill-formed input sentence."
+	Error.error (Positions.lexbuf lexbuf) "Ill-formed input sentence."
     in
 
     let rec loop () =

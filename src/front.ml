@@ -55,8 +55,8 @@ let grammar =
     let grammar, inlined = 
       NonTerminalDefinitionInlining.inline grammar
     in
-    if not Settings.infer && inlined then
-      Error.warning 
+    if not Settings.infer && inlined && not Settings.coq then
+      Error.warning []
 	"you are using the standard library and/or the %inline keyword. We\n\
 	 recommend switching on --infer in order to avoid obscure type error messages.";
     Time.tick "Inlining";

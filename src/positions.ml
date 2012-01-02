@@ -146,3 +146,18 @@ let join_located_list ls f =
     position  = ljoinf (fun x -> x.position) ls
   }
 
+(* The functions that print error messages and warnings require a list of
+   positions. The following auxiliary functions help build such lists. *)
+
+type positions =
+    t list
+
+let one (pos : Lexing.position) : positions =
+  [ { start_p = pos; end_p = pos } ] (* or: lex_join pos pos *)
+
+let two (pos1 : Lexing.position) (pos2 : Lexing.position) : positions =
+  [ lex_join pos1 pos2 ]
+
+let lexbuf (lexbuf : Lexing.lexbuf) : positions =
+  [ lex_join lexbuf.Lexing.lex_start_p lexbuf.Lexing.lex_curr_p ]
+

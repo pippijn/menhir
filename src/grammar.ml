@@ -62,7 +62,7 @@ module TokPrecedence = struct
 	| UndefinedPrecedence ->
 	    ()
 	| PrecedenceLevel (_, _, pos1, pos2) ->
-	    Error.warning2 pos1 pos2
+	    Error.grammar_warning (Positions.two pos1 pos2)
 	      (Printf.sprintf "the precedence level assigned to %s is never useful." id)
     ) Front.grammar.tokens
 
@@ -126,6 +126,11 @@ module Nonterminal = struct
   let map f =
     Misc.mapi n f
 
+  let iterx f =
+    for nt = start to n - 1 do
+      f nt
+    done
+
   let foldx f accu =
     Misc.foldij start n f accu
 
@@ -178,7 +183,7 @@ module Terminal = struct
     in
     match tokens with
     | [] ->
-	Error.error "no tokens have been declared."
+	Error.error [] "no tokens have been declared."
     | _ ->
 	Misc.index ("error" :: tokens @ [ "#" ])
 
@@ -623,7 +628,7 @@ module Production = struct
 	| None ->
 	    ()
 	| Some id ->
-	    Error.warningp id "this %prec declaration is never useful."
+	    Error.grammar_warning [Positions.position id] "this %prec declaration is never useful."
     )
 
   (* Determining the precedence level of a production. If no %prec
@@ -805,7 +810,7 @@ let () =
   let nonempty, _ = compute true in
   for nt = Nonterminal.start to Nonterminal.n - 1 do
     if not nonempty.(nt) then
-      Error.warningN
+      Error.grammar_warning
 	(Nonterminal.positions nt)
 	(Printf.sprintf "%s generates the empty language." (Nonterminal.print false nt))
   done
@@ -875,10 +880,12 @@ let () =
   Time.tick "Analysis of the grammar"
 
 (* ------------------------------------------------------------------------ *)
-(* Compute FOLLOW sets. Unnecessary for us, but requested by a user. *)
+(* Compute FOLLOW sets. Unnecessary for us, but requested by a user. Also,
+   this is useful for the SLR(1) test. Thus, we perform this analysis only
+   on demand. *)
 
-let () =
-  Error.logG 2 (fun f ->
+let follow : TerminalSet.t array Lazy.t =
+  lazy (
 
     let follow =
       Array.make Nonterminal.n TerminalSet.empty
@@ -927,12 +934,25 @@ let () =
       TerminalSet.compare original updated <> 0
     );
 
+    follow
+
+  )
+
+(* Define an accessor that triggers the computation of the FOLLOW sets
+   if it has not been performed already. *)
+
+let follow nt =
+  (Lazy.force follow).(nt)
+
+(* At log level 2, display the FOLLOW sets. *)
+
+let () =
+  Error.logG 2 (fun f ->
     for nt = 0 to Nonterminal.n - 1 do
       Printf.fprintf f "follow(%s) = %s\n"
 	(Nonterminal.print false nt)
-	(TerminalSet.print follow.(nt))
+	(TerminalSet.print (follow nt))
     done
-
   )
 
 (* ------------------------------------------------------------------------ *)
@@ -999,6 +1019,8 @@ module Analysis = struct
 
   let explain_first_rhs (tok : Terminal.t) (rhs : Symbol.t array) (i : int) =
     convert (explain tok rhs i)
+
+  let follow = follow
 
 end
 

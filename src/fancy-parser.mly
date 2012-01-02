@@ -93,7 +93,7 @@ declaration:
 
 | TOKEN OCAMLTYPE? clist(terminal) error
 | TOKEN OCAMLTYPE? error
-    { Error.signal $startpos $endpos "\
+    { Error.signal (Positions.two $startpos $endpos) "\
 Syntax error in a %token declaration.
 Here are sample valid declarations:
   %token DOT SEMICOLON
@@ -108,12 +108,13 @@ Here are sample valid declarations:
       | None ->
 	  List.map (Positions.map (fun nonterminal -> DStart nonterminal)) nts
       | Some t ->
-	  Misc.mapd (Positions.mapd (fun nonterminal -> DStart nonterminal, DType (t, nonterminal))) nts
+	  Misc.mapd (fun ntloc ->
+            Positions.mapd (fun nt -> DStart nt, DType (t, ParameterVar ntloc)) ntloc) nts
     }
 
 | START OCAMLTYPE? clist(nonterminal) error
 | START OCAMLTYPE? error
-    { Error.signal $startpos $endpos "\
+    { Error.signal (Positions.two $startpos $endpos) "\
 Syntax error in a %start declaration.
 Here are sample valid declarations:
   %start expression phrase
@@ -121,13 +122,14 @@ Here are sample valid declarations:
       []
     }
 
-| TYPE t = OCAMLTYPE ss = clist(symbol) %prec decl
-    { List.map (Positions.map (fun nonterminal -> DType (t, nonterminal))) ss }
+| TYPE t = OCAMLTYPE ss = clist(actual_parameter) %prec decl
+    { List.map (Positions.map (fun nt -> DType (t, nt)))
+        (List.map Parameters.with_pos ss) }
 
-| TYPE OCAMLTYPE clist(symbol) error
+| TYPE OCAMLTYPE clist(actual_parameter) error
 | TYPE OCAMLTYPE error
 | TYPE error
-    { Error.signal $startpos $endpos "\
+    { Error.signal (Positions.two $startpos $endpos) "\
 Syntax error in a %type declaration.
 Here are sample valid declarations:
   %type <Syntax.expression> expression
@@ -141,7 +143,7 @@ Here are sample valid declarations:
 
 | priority_keyword clist(symbol) error
 | priority_keyword error
-    { Error.signal $startpos $endpos "\
+    { Error.signal (Positions.two $startpos $endpos) "\
 Syntax error in a precedence declaration.
 Here are sample valid declarations:
   %left PLUS TIMES
@@ -154,7 +156,7 @@ Here are sample valid declarations:
     { [ with_poss $startpos $endpos (DParameter t) ] }
 
 | PARAMETER error
-    { Error.signal $startpos $endpos "\
+    { Error.signal (Positions.two $startpos $endpos) "\
 Syntax error in a %parameter declaration.
 Here is a sample valid declaration:
   %parameter <X : sig type t end>";
@@ -167,7 +169,7 @@ Here is a sample valid declaration:
    recover after the first error. */
 | error
     { if $previouserror >= 3 then
-        Error.signal $startpos $endpos "Syntax error inside a declaration.";
+        Error.signal (Positions.two $startpos $endpos) "Syntax error inside a declaration.";
       [] }
 
 /* This production recognizes tokens that are valid in the rules section,
@@ -177,7 +179,7 @@ Here is a sample valid declaration:
 | rule_specific_token
     {
       if $previouserror >= 3 then
-	Error.signal $startpos $endpos
+	Error.signal (Positions.two $startpos $endpos)
 	  "Syntax error inside a declaration.\n\
 	   Did you perhaps forget the %% that separates declarations and rules?";
 
@@ -198,7 +200,6 @@ priority_keyword:
 rule_specific_token:
 | PUBLIC
 | INLINE
-| LPAREN
 | COLON
 | EOF
     { () }
@@ -264,7 +265,7 @@ rule:
     /* This error production should lead to resynchronization on the next
        well-formed rule. */
     { if $previouserror >= 3 then
-        Error.signal $startpos $endpos "Syntax error inside the definition of a nonterminal symbol.";
+        Error.signal (Positions.two $startpos $endpos) "Syntax error inside the definition of a nonterminal symbol.";
       [] }
 
 flags:
@@ -310,7 +311,7 @@ production_group:
        semantic action, unless the end of file is reached before a semantic
        action is found. */
     { if $previouserror >= 3 then
-        Error.signal $startpos($1) $endpos($1) "Syntax error inside a production.";
+        Error.signal (Positions.two $startpos($1) $endpos($1)) "Syntax error inside a production.";
       [] }
 
 %inline precedence:

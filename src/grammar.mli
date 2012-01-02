@@ -70,7 +70,8 @@ module Nonterminal : sig
 
   (* Iteration over all nonterminals, except the start nonterminals. *)
 
-  val foldx: (t -> 'a -> 'a) -> 'a -> 'a  
+  val iterx: (t -> unit) -> unit
+  val foldx: (t -> 'a -> 'a) -> 'a -> 'a 
 
   (* Tabulation of a function over nonterminals. *)
 
@@ -370,6 +371,12 @@ module Analysis : sig
      the array [rhs]. *)
 
   val explain_first_rhs: Terminal.t -> Symbol.t array -> int -> string
+
+  (* [follow nt] is the FOLLOW set of the non-terminal symbol [nt], that
+     is, the set of terminal symbols that could follow an expansion of
+     [nt] in a valid sentence. *)
+
+  val follow: Nonterminal.t -> TerminalSet.t
 
 end
 

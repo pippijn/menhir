@@ -30,6 +30,11 @@
       pos_bol = pos.pos_cnum;
     }
 
+  (* A short-hand. *)
+
+  let error1 lexbuf msg =
+    Error.error (Positions.one (lexeme_start_p lexbuf)) msg
+
 }
 
 let newline   = ('\010' | '\013' | "\013\010")
@@ -49,15 +54,15 @@ rule lex = parse
 	  if StringSet.mem lid Front.grammar.UnparameterizedSyntax.start_symbols then
 	    NONTERMINAL nt
 	  else
-	    Error.error1 (lexeme_start_p lexbuf) (Printf.sprintf "\"%s\" is not a start symbol." lid)
+	    error1 lexbuf (Printf.sprintf "\"%s\" is not a start symbol." lid)
 	with Not_found ->
-	  Error.error1 (lexeme_start_p lexbuf) (Printf.sprintf "\"%s\" is not a known non-terminal symbol." lid)
+	  error1 lexbuf (Printf.sprintf "\"%s\" is not a known non-terminal symbol." lid)
       }
   | (uppercase identchar *) as uid
       { try
 	  TERMINAL (Terminal.lookup uid)
 	with Not_found ->
-	  Error.error1 (lexeme_start_p lexbuf) (Printf.sprintf "\"%s\" is not a known terminal symbol." uid)
+	  error1 lexbuf (Printf.sprintf "\"%s\" is not a known terminal symbol." uid)
       }
   | whitespace
       { lex lexbuf }
@@ -68,5 +73,5 @@ rule lex = parse
   | ':'
       { COLON }
   | _
-      { Error.error1 (lexeme_start_p lexbuf) "unexpected character(s)." }
+      { error1 lexbuf "unexpected character(s)." }
 

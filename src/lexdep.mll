@@ -20,7 +20,7 @@
   open Lexing
 
   let fail lexbuf =
-    Error.error
+    Error.error []
       (Printf.sprintf
 	 "failed to make sense of ocamldep's output (character %d)."
 	 lexbuf.lex_curr_p.pos_cnum)

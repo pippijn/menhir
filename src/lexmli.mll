@@ -19,7 +19,7 @@
 {
 
   let fail () =
-    Error.error "failed to make sense of ocamlc's output."
+    Error.error [] "failed to make sense of ocamlc's output."
 
 }
 

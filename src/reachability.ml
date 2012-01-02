@@ -36,7 +36,7 @@ and visits grammar visited (symbol, _) =
 
 let trim grammar =
   if StringSet.cardinal grammar.start_symbols = 0 then
-    Error.error "no start symbol has been declared."
+    Error.error [] "no start symbol has been declared."
   else
     let reachable =
       StringSet.fold (fun symbol visited ->
@@ -45,7 +45,7 @@ let trim grammar =
     in
     StringMap.iter (fun symbol rule ->
       if not (StringSet.mem symbol reachable) then
-	Error.warningN
+	Error.grammar_warning
 	  rule.positions
 	  (Printf.sprintf
 	     "symbol %s is unreachable from any of the start symbol(s)."

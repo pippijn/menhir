@@ -123,6 +123,11 @@ end) = struct
       dx.number <- !counter;
       dx.low <- !counter
 
+  (* This reference will hold a list of all representative nodes. *)
+
+  let representatives =
+    ref []
+
   (* Look at all nodes of the graph, one after the other. Any
      unvisited nodes become roots of the search forest. *)
 
@@ -192,7 +197,8 @@ end) = struct
 	    if element != dx then
 	      loop() in
 
-	  loop()
+	  loop();
+	  representatives := x :: !representatives
 
 	end in
 
@@ -209,6 +215,14 @@ end) = struct
 
   let scc x =
     (table x).scc
+
+  let iter action =
+    List.iter (fun x ->
+      let data = table x in
+      assert (data.representative == x); (* a sanity check *)
+      assert (data.scc <> []); (* a sanity check *)
+      action x data.scc
+    ) !representatives
 
 end
 

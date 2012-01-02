@@ -656,9 +656,24 @@ let bfs =
 let fold f accu =
   List.fold_left f accu nodes
 
+let iter f =
+  fold (fun () node -> f node) ()
+
 let map f =
   List.map f nodes
 
+let foldx f =
+  fold (fun accu node ->
+          match node.incoming_symbol with
+            | None -> accu
+            | Some _ -> f accu node)
+
+let iterx f =
+  iter (fun node -> 
+    match node.incoming_symbol with 
+      | None -> () 
+      | Some _ -> f node)
+ 
 (* -------------------------------------------------------------------------- *)
 (* Our output channel. *)
 
@@ -774,6 +789,9 @@ let conflicts f =
 let incoming_symbol node =
   node.incoming_symbol
 
+let predecessors node =
+  node.predecessors
+
 (* ------------------------------------------------------------------------ *)
 
 (* This inverts a mapping of tokens to productions into a mapping of
@@ -796,17 +814,72 @@ let invert reductions : TerminalSet.t ProductionMap.t =
   ) reductions ProductionMap.empty
     
 (* ------------------------------------------------------------------------ *)
+(* Computing which terminal symbols a state is willing to act upon.
+
+   This function is currently unused, but could be used as part of an error
+   reporting system.
+
+   One must keep in mind that, due to the merging of states, a state might be
+   willing to perform a reduction on a certain token, yet the reduction can
+   take us to another state where this token causes an error. In other words,
+   the set of terminal symbols that is computed here is really an
+   over-approximation of the set of symbols that will not cause an error. And
+   there seems to be no way of performing an exact computation, as we would
+   need to know not only the current state, but the contents of the stack as
+   well. *)
+
+let acceptable_tokens (s : node) =
+
+  (* If this state is willing to act on the error token, ignore it -- we do
+     not wish to report that an error would be accepted in this state :-) *)
+
+  let transitions =
+    SymbolMap.remove (Symbol.T Terminal.error) (transitions s)
+  and reductions =
+    TerminalMap.remove Terminal.error (reductions s)
+  in
+
+  (* Accumulate the tokens carried by outgoing transitions. *)
+
+  let covered =
+    SymbolMap.fold (fun symbol _ covered ->
+      match symbol with
+      | Symbol.T tok ->
+	  TerminalSet.add tok covered
+      | Symbol.N _ ->
+	  covered
+    ) transitions TerminalSet.empty
+  in
+
+  (* Accumulate the tokens that permit reduction. *)
+
+  let covered =
+    ProductionMap.fold (fun _ toks covered ->
+      TerminalSet.union toks covered
+    ) (invert reductions) covered
+  in
+
+  (* That's it. *)
+
+  covered
+
+(* ------------------------------------------------------------------------ *)
 (* Report statistics. *)
+
+(* Produce the reports. *)
 
 let () =
   if !shift_reduce = 1 then
-    Error.warning "one state has shift/reduce conflicts."
+    Error.grammar_warning [] "one state has shift/reduce conflicts."
   else if !shift_reduce > 1 then
-    Error.warning (Printf.sprintf "%d states have shift/reduce conflicts." !shift_reduce);
+    Error.grammar_warning [] (Printf.sprintf "%d states have shift/reduce conflicts." !shift_reduce);
   if !reduce_reduce = 1 then
-    Error.warning "one state has reduce/reduce conflicts."
+    Error.grammar_warning [] "one state has reduce/reduce conflicts."
   else if !reduce_reduce > 1 then
-    Error.warning (Printf.sprintf "%d states have reduce/reduce conflicts." !reduce_reduce)
+    Error.grammar_warning [] (Printf.sprintf "%d states have reduce/reduce conflicts." !reduce_reduce)
+
+(* There is a global check for errors at the end of [Invariant], so we do
+   not need to check & stop here. *)
 
 (* ------------------------------------------------------------------------ *)
 (* When requested by the code generator, apply default conflict
@@ -824,7 +897,7 @@ let rec best choice = function
       | Some choice ->
 	  best choice prods
       | None ->
-	  Error.signalN
+	  Error.signal
 	    (Production.positions choice @ Production.positions prod)
 	    (Printf.sprintf
 	       "will not resolve reduce/reduce conflict between\n\
@@ -878,13 +951,13 @@ let default_conflict_resolution () =
   ) conflict_nodes;
 
   if !shift_reduce = 1 then
-    Error.warning "one shift/reduce conflict was arbitrarily resolved."
+    Error.warning [] "one shift/reduce conflict was arbitrarily resolved."
   else if !shift_reduce > 1 then
-    Error.warning (Printf.sprintf "%d shift/reduce conflicts were arbitrarily resolved." !shift_reduce);
+    Error.warning [] (Printf.sprintf "%d shift/reduce conflicts were arbitrarily resolved." !shift_reduce);
   if !reduce_reduce = 1 then
-    Error.warning "one reduce/reduce conflict was arbitrarily resolved."
+    Error.warning [] "one reduce/reduce conflict was arbitrarily resolved."
   else if !reduce_reduce > 1 then
-    Error.warning (Printf.sprintf "%d reduce/reduce conflicts were arbitrarily resolved." !reduce_reduce);
+    Error.warning [] (Printf.sprintf "%d reduce/reduce conflicts were arbitrarily resolved." !reduce_reduce);
 
   (* Now, ensure that states that have a reduce action at the
      pseudo-token "#" have no other action. *)
@@ -954,12 +1027,7 @@ let default_conflict_resolution () =
   ) ();
 
   if !ambiguities = 1 then
-    Error.warning "one state has an end-of-stream conflict."
+    Error.grammar_warning [] "one state has an end-of-stream conflict."
   else if !ambiguities > 1 then
-    Error.warning (Printf.sprintf "%d states have an end-of-stream conflict." !ambiguities);
-
-  (* If any fatal error was signaled above, stop now. *)
-
-  if Error.errors() then
-    exit 1
+    Error.grammar_warning [] (Printf.sprintf "%d states have an end-of-stream conflict." !ambiguities)
 

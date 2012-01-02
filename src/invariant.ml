@@ -26,31 +26,26 @@ open Grammar
 
 (* ------------------------------------------------------------------------ *)
 (* Discover what is known of the structure of the stack in every
-   automaton node. This knowledge can be defined, to a first
-   approximation, as the greatest common suffix of all paths that lead
-   up to this node, where a path is viewed as a string of symbols.
+   automaton node. *)
 
-   At each state, we distinguish two cases: either the stack is known
-   entirely, or only a suffix of it is known. In other words, the part
-   of the stack that is not described by the string of symbols is
-   empty in the former case and unknown in the latter.
+(* A concrete stack is a list of pairs of a symbol and a state. *)
 
-   We compute this information by beginning with an upper bound,
-   namely the shortest path towards each node. The string that we are
-   looking for is a substring of that path. Furthermore, we enforce
-   the property that, when two paths join, they should agree about the
-   structure of the stack at the join point. That is, whenever we find
-   a new edge that leads to a known state, we take the greatest common
-   suffix of the two strings that they correspond to.
+(* An abstract stack is (a finite representation of) a possibly
+   infinite set of concrete stacks. *)
 
-   In addition to this information, we compute the set of states that
-   are liable to appear in each stack cell. When two paths join, we
-   take the union of the state sets that appear along the greatest
-   common suffix. *)
+(* The type [tail] has two values. [TailEmpty] represents a singleton
+   set that contains (only) the empty stack. [TailUnknown] represents
+   the full set of all stacks. *)
 
 type tail =
   | TailEmpty
   | TailUnknown
+
+(* An abstract cell is a pair of a symbol and a set of states. An
+   abstract word is a list of abstract cells. An abstract stack
+   is a pair of an abstract word, which represents a known suffix
+   of the stack, and a tail, which provides information about the
+   remainder of the stack. *)
 
 type cell =
     Symbol.t * Lr1.NodeSet.t
@@ -62,15 +57,49 @@ type stack =
     word * tail
 
 (* ------------------------------------------------------------------------ *)
-(* This is how we extend a stack with a new symbol. *)
+(* Equality of abstract stacks. *)
 
-let extend cell (w, tail) =
+let eq_tail tail1 tail2 =
+  match tail1, tail2 with
+  | TailEmpty, TailEmpty
+  | TailUnknown, TailUnknown ->
+      true
+  | _, _ ->
+      false
+
+let eq_cell (symbol1, states1) (symbol2, states2) =
+  Symbol.equal symbol1 symbol2 &&
+  Lr1.NodeSet.equal states1 states2
+
+let rec eq_word w1 w2 =
+  match w1, w2 with
+  | [], [] ->
+      true
+  | cell1 :: w1, cell2 :: w2 ->
+      eq_cell cell1 cell2 &&
+      eq_word w1 w2
+  | _, _ ->
+      false
+
+let eq_stack (w1, tail1) (w2, tail2) =
+  eq_tail tail1 tail2 &&
+  eq_word w1 w2
+
+(* ------------------------------------------------------------------------ *)
+(* Extending an abstract stack with a new cell. *)
+
+let extend_stack cell stack =
+  let (w, tail) = stack in
   cell :: w, tail
 
 (* ------------------------------------------------------------------------ *)
-(* This is how we compute the meet of two stacks. *)
+(* Computing the join of two abstract stacks. *)
 
-let rec tmeet (tail1 : tail) (tail2 : tail) : tail =
+(* The join of [stack1] and [stack2] is their least upper bound, that
+   is, the best abstract description of the union of the two sets of
+   concrete stacks denoted by [stack1] and [stack2]. *)
+
+let rec join_tail (tail1 : tail) (tail2 : tail) : tail =
   match tail1, tail2 with
   | TailEmpty, TailEmpty ->
       TailEmpty
@@ -78,7 +107,7 @@ let rec tmeet (tail1 : tail) (tail2 : tail) : tail =
   | _, TailUnknown ->
       TailUnknown
 
-let rec wmeet (w1 : word) (w2 : word) : word * tail =
+let rec join_word (w1 : word) (w2 : word) : word * tail =
   match w1, w2 with
   | [], [] ->
       (* Both stacks are empty. There is agreement. *)
@@ -92,66 +121,169 @@ let rec wmeet (w1 : word) (w2 : word) : word * tail =
       if Symbol.equal symbol1 symbol2 then
 	(* The stacks agree on their top cell. It is therefore part
 	   of the greatest common suffix. *)
-        let w, tail = wmeet w1 w2 in
+        let w, tail = join_word w1 w2 in
 	(symbol1, Lr1.NodeSet.union states1 states2) :: w, tail
       else
         (* The stacks disagree on their top cell. Their greatest common
 	   suffix is therefore empty. *)
 	[], TailUnknown
 
-let rec meet (stk1 : stack) (stk2 : stack) : stack =
+let rec join_stack (stk1 : stack) (stk2 : stack) : stack =
   let w1, tail1 = stk1
   and w2, tail2 = stk2 in
-  let w, tail = wmeet w1 w2 in
-  w, tmeet tail (tmeet tail1 tail2)
+  let w, tail = join_word w1 w2 in
+  w, join_tail tail (join_tail tail1 tail2)
 
 (* ------------------------------------------------------------------------ *)
-(* This is how we truncate a stack at a certain depth. *)
+(* Truncating an abstract stack at a certain depth. *)
 
 let truncate depth (w, tail) =
   assert (List.length w >= depth);
   Misc.truncate depth w, TailUnknown
 
 (* ------------------------------------------------------------------------ *)
-(* This is our initial estimation of the stack at every node. It will remain
-   unmodified at entry nodes, but will be overwritten without consideration
-   at all other nodes. *)
+(* This abstract set denotes a singleton set of the empty stack. *)
 
 let empty : stack =
   [], TailEmpty
 
+(* 2011/04/28: although this seems difficult to believe, the code that was
+   used until now to compute the invariant was completely broken. A single
+   pass over the automaton was used, so the abstract stacks that were computed
+   did not represent a least fixed point, but (for most of our sample
+   grammars) were strictly below the least fixed point. (That is, they produce
+   descriptions of the stack that were unsound / too strong.)  For some
+   reason, Menhir was apparently still able to produce correct code. (Some
+   type annotations in the code were probably incorrect, but apparently this
+   did not matter because the code is full of magic anyway.)
+
+   I am now fixing this problem (I hope!) by explicitly requesting the
+   computation of a least fixed point. *)
+
 (* ------------------------------------------------------------------------ *)
-(* This is a mapping of automaton nodes to stacks. *)
+(* The abstract stacks that we have presented above represent non-empty sets
+   of concrete stacks. In order to perform the fixed point computation, we
+   also need a bottom element, which represents an empty set of concrete
+   stacks. This element is used during the fixed point computation, but does
+   not appear in the least fixed point, provided every state of the automaton
+   is reachable. (A state is reachable if only if the least fixed point
+   associates it with a non-empty set of stacks.) *)
 
-let stacks : stack array =
-  Array.make Lr1.n empty
+type value =
+  | VEmptySet
+  | VNonEmptySet of stack
 
-let stack node =
-  stacks.(Lr1.number node)
+let eq_value v1 v2 =
+  match v1, v2 with
+  | VEmptySet, VEmptySet ->
+      true
+  | VNonEmptySet stack1, VNonEmptySet stack2 ->
+      eq_stack stack1 stack2
+  | _, _ ->
+      false
 
-let set_stack node h =
-  stacks.(Lr1.number node) <- h
+let join_value v1 v2 =
+  match v1, v2 with
+  | VEmptySet, v
+  | v, VEmptySet ->
+      v
+  | VNonEmptySet stack1, VNonEmptySet stack2 ->
+      VNonEmptySet (join_stack stack1 stack2)
+
+let extend_value cell v =
+  match v with
+  | VEmptySet ->
+      VEmptySet
+  | VNonEmptySet stack ->
+      VNonEmptySet (extend_stack cell stack)
 
 (* ------------------------------------------------------------------------ *)
-(* Here comes the initial discovery phase. *)
+(* Instantiate the least fixed point computation machinery with states and
+   values. *)
 
-let () =
-  Lr1.bfs (fun discovery source symbol target ->
+module F =
+  Fix.Make
+    (struct
 
-    (* There is a transition from [source] to [target] labeled
-       [symbol]. This yields a new description of the stack at the
-       target node, where the top cell holds [symbol] and [source],
-       and where the structure of the remainder of the stack is the
-       structure of the stack at the [source] node. *)
+      type key =
+	  Lr1.NodeMap.key
 
-    let stk = extend (symbol, Lr1.NodeSet.singleton source) (stack source) in
+      type 'data t =
+	  'data Lr1.NodeMap.t ref
 
-    (* Define or update the structure of the stack at the [target]
-       node, depending on whether this node was newly discovered. *)
+      let create () =
+	ref Lr1.NodeMap.empty
 
-    set_stack target (if discovery then stk else meet (stack target) stk)
+      let clear t =
+	t := Lr1.NodeMap.empty
+
+      let add k d t =
+	t := Lr1.NodeMap.add k d !t
+
+      let find k t =
+	Lr1.NodeMap.find k !t
+
+      let iter f t =
+	Lr1.NodeMap.iter f !t
+
+    end)
+    (struct
+      type property = value
+      let bottom = VEmptySet
+      let equal = eq_value
+      let is_maximal _ = false
+    end)
+
+(* ------------------------------------------------------------------------ *)
+(* Define the fixed point. *)
+
+let lfp : Lr1.node -> value =
+
+  F.lfp (fun node (get : Lr1.node -> value) ->
+
+    (* We use the fact that a state has incoming transitions if and only if
+       it is not a start state. This allows to us to simplify the following
+       code slightly. *)
+
+    match Lr1.incoming_symbol node with
+
+    | None ->
+	assert (Lr1.predecessors node = []);
+
+	(* If [node] is a start state, then the stack at [node] may be (in
+	   fact, must be) the empty stack. *)
+
+	VNonEmptySet empty
+
+    | Some symbol ->
+
+	(* If [node] is not a start state, then include the contribution of
+	   every incoming transition. We compute a join over all predecessors.
+	   The contribution of one predecessor is the abstract value found at
+	   this predecessor, extended with a new cell for this transition. *)
+
+	List.fold_left (fun v predecessor ->
+	  join_value
+	    v
+	    (extend_value (symbol, Lr1.NodeSet.singleton predecessor) (get predecessor))
+	) VEmptySet (Lr1.predecessors node)
 
   )
+
+(* If every state is reachable, then the least fixed point must be non-bottom
+   everywhere, so we may view it as a function that produces a [stack], a
+   description of a non-empty set of stacks. *)
+
+let lfp (node : Lr1.node) : stack =
+  match lfp node with
+  | VEmptySet ->
+      (* apparently this node is unreachable *)
+      assert false
+  | VNonEmptySet stack ->
+      stack
+
+let stack =
+  lfp
 
 (* ------------------------------------------------------------------------ *)
 (* We now discover what can be said of the structure of the stack when
@@ -184,11 +316,14 @@ let prodinfo : prodinfo =
 	    More (
 	      Lr1.NodeSet.singleton node,
 	      truncate (Production.length prod) (stack node)
+	      (* the use of [truncate] guarantees that we do not accidentally
+		 get more information than we would like; not sure whether/why
+		 this is necessary *)
             )
 	| More (nodes, stk') ->
 	    More (
 	      Lr1.NodeSet.add node nodes,
-	      meet (stack node) stk'
+	      join_stack (stack node) stk'
             )
       ) prodinfo
     ) (Lr1.reductions node) prodinfo
@@ -200,19 +335,19 @@ let () =
     match find prod prodinfo, Production.classify prod with
     | Zero, Some nt ->
 	incr count;
-	Error.warningN
+	Error.grammar_warning
 	  (Nonterminal.positions nt)
 	  (Printf.sprintf "symbol %s is never accepted." (Nonterminal.print false nt))
     | Zero, None ->
 	incr count;
-	Error.warningN
+	Error.grammar_warning
 	  (Production.positions prod)
 	  (Printf.sprintf "production %sis never reduced." (Production.print prod))
     | More (_, (w, _)), _ ->
 	assert (List.length w = Production.length prod)
   );
   if !count > 0 then
-    Error.warning
+    Error.grammar_warning []
       (Printf.sprintf "in total, %d productions are never reduced." !count)
 
 let prodstack prod =
@@ -241,7 +376,7 @@ let prodstack prod =
    one target, then state [s] is represented.
 
    (3) If a stack cell contains more than one state and if at least
-   one if these states is able to handle the [error] token, then these
+   one of these states is able to handle the [error] token, then these
    states are represented.
 
    (4) If the semantic action associated with a production mentions
@@ -279,7 +414,9 @@ let share (w, _) =
   ) w
 
 let () =
-  Array.iter share stacks;
+  Lr1.iter (fun node ->
+    share (lfp node)
+  );
   Production.iter (fun prod ->
     match find prod prodinfo with
     | Zero ->
@@ -320,12 +457,13 @@ let handlers states =
   Lr1.NodeSet.exists handler states
 
 let () =
-  Array.iter (fun (w, _) ->
+  Lr1.iter (fun node ->
+    let (w, _) = lfp node in
     List.iter (fun (_, states) ->
       if Lr1.NodeSet.cardinal states >= 2 && handlers states then
 	represents states
     ) w
-  ) stacks
+  )
 
 (* Enforce condition (4) above. *)
 
@@ -363,7 +501,7 @@ let handlerc (_, states) =
 
 let fold f accu w =
   List.fold_right (fun (symbol, states) accu ->
-    f accu (representeds states) symbol
+    f accu (representeds states) symbol states
   ) w accu
 
 let fold_top f accu w =
@@ -447,7 +585,7 @@ let rewind node : instruction =
 
 	else
 
-	  (* Here an unrepresented state that does not handle
+	  (* Here is an unrepresented state that does not handle
 	     errors. Pop this cell and look further. *)
 
 	  match rewind w with
@@ -730,4 +868,14 @@ let () =
 
 let () =
   Time.tick "Constructing the invariant"
+
+(* ------------------------------------------------------------------------ *)
+
+(* If any fatal error was signaled up to this point, stop now. This may include
+   errors signaled in the modules [lr1] and [invariant] by calling the function
+   [Error.grammar_warning]. *)
+
+let () =
+  if Error.errors() then
+    exit 1
 

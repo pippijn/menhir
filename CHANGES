@@ -1,3 +1,44 @@
+2011/10/19:
+The Makefile now tests whether Unix or Windows is used (the test is performed
+by evaluating Sys.os_type under ocaml) and changes a couple settings accordingly:
+- the executable file name is either menhir or menhir.exe
+- the object file suffix is either .o or .obj
+
+2011/10/19:
+Added --strict, which causes many warnings about the grammar and about the
+automaton to be considered errors.
+
+2011/10/19:
+The # annotations that are inserted in the generated .ml file now retain their
+full path. (That is, we no longer use [Filename.basename].) This implies that
+the # annotations depend on how menhir is invoked -- e.g.  "menhir
+foo/bar.mly" and "cd foo && menhir bar.mly" will produce different
+results. Nevertheless, this seems reasonable and useful (e.g. in conjunction
+with ocamlbuild and a hierarchy of files). Thanks to Daniel Weil.
+
+2011/10/06:
+With the -lg 1 switch, Menhir now indicates whether the grammar is SLR(1).
+
+2011/05/24:
+Removed the lock in ocamldep.wrapper. It is the responsibility of the user
+to avoid interferences with other processes (or other instances of the script)
+that create and/or remove files.
+
+2011/04/28:
+The (internal) computation of the automaton's invariant was broken and has
+been fixed. Surprisingly, this does not seem to affect the generated code,
+(which was correct,) so no observable bug is fixed. Hopefully no bug is
+introduced!
+
+2011/04/07:
+The grammar description files (.mly) are now read in up front and stored in
+memory while they are parsed. This allows us to avoid the use of pos_in and
+seek_in, which do not work correctly when CRLF conversion is being performed.
+
+2011/04/05:
+Fixed a bug in the type inference module (for parameterized non-terminals)
+which would cause an infinite loop.
+
 2011/01/24:
 Fixed a bug that would cause an assertion failure in the generated parser
 in some situations where the input stream was incorrect and the grammar
