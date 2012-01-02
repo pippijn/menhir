@@ -1,3 +1,9 @@
+menhir (20111019.dfsg-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Mehdi Dogguy <mehdi@debian.org>  Mon, 02 Jan 2012 18:04:28 +0100
+
 menhir (20110201.dfsg-1) unstable; urgency=low
 
   [ Stéphane Glondu ]
