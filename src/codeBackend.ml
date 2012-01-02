@@ -691,7 +691,7 @@ let curryif flag t =
    always correctly removes the top stack cell, even if it is a
    singleton tuple cell. *)
 
-let celltype tailtype holds_state symbol =
+let celltype tailtype holds_state symbol _ =
   TypTuple (
     tailtype ::
     insertif holds_state tstate @
@@ -756,7 +756,7 @@ let gototypescheme nt =
 let reduce_expects_state_param prod =
   let nt = Production.nt prod in
   Production.length prod = 0 && 
-  Invariant.fold (fun _ holds_state _ -> holds_state) false (Invariant.gotostack nt)
+  Invariant.fold (fun _ holds_state _ _ -> holds_state) false (Invariant.gotostack nt)
 
 (* The type of the [reduce] function. If shiftreduce optimization
    is performed for this production, then the top stack cell is
@@ -857,7 +857,7 @@ let reducecellparams prod i holds_state symbol =
    again. The choice of identifiers is suitable for use in the
    definition of [error]. *)
 
-let errorcellparams (i, pat) holds_state symbol =
+let errorcellparams (i, pat) holds_state symbol _ =
   i + 1,
   ptuple (
     pat ::
@@ -966,7 +966,7 @@ let check_recoverer covered s =
   | Some eof ->
       if not (TerminalSet.mem eof covered) then
 	(* This state has no (shift or reduce) action at EOF. *)
-	Error.warning
+	Error.warning []
 	  (Printf.sprintf
 	     "state %d can perform error recovery, but does not accept EOF.\n\
 	      ** Hitting the end of file during error recovery will cause non-termination."
@@ -1365,7 +1365,7 @@ let reducebody prod =
      it in the pattern that is built. *)
 
   let (_ : int), pat =
-    Invariant.fold (fun (i, pat) holds_state symbol ->
+    Invariant.fold (fun (i, pat) holds_state symbol _ ->
       i + 1,
       if i = length - 1 && shiftreduce prod then
 	pat

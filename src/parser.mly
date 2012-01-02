@@ -89,12 +89,14 @@ declaration:
 | START nonterminals
     { List.map (Positions.map (fun nonterminal -> DStart nonterminal)) $2 }
 
-| TYPE OCAMLTYPE symbols
-    { List.map (Positions.map (fun nonterminal -> DType ($2, nonterminal))) $3 }
+| TYPE OCAMLTYPE actual_parameters
+    { List.map (Positions.map (fun nt -> DType ($2, nt)))
+        (List.map Parameters.with_pos $3) }
 
 | START OCAMLTYPE nonterminals
     /* %start <ocamltype> foo is syntactic sugar for %start foo %type <ocamltype> foo */
-    { Misc.mapd (Positions.mapd (fun nonterminal -> DStart nonterminal, DType ($2, nonterminal))) $3 }
+    { Misc.mapd (fun ntloc -> 
+        Positions.mapd (fun nt -> DStart nt, DType ($2, ParameterVar ntloc)) ntloc) $3 }
 
 | priority_keyword symbols
     { let prec = ParserAux.current_token_precedence (rhs_start_pos 1) (rhs_end_pos 1) in
@@ -220,18 +222,24 @@ formal_parameters:
 optional_actual_parameters:
   /* epsilon */
     { [] }
-| LPAREN actual_parameters RPAREN
+| LPAREN actual_parameters_comma RPAREN
     { $2 }
 
-actual_parameters:
+actual_parameters_comma:
   actual_parameter 
     { [ $1 ] }
-| actual_parameter COMMA actual_parameters
+| actual_parameter COMMA actual_parameters_comma
     { $1 :: $3 }
 
 actual_parameter:
   symbol optional_actual_parameters optional_modifier
     { Parameters.oapp1 $3 (Parameters.app $1 $2) }
+
+actual_parameters:
+  /* epsilon */
+    { [] }
+| actual_parameters optional_comma actual_parameter
+    { $3::$1 }
 
 optional_bar:
   /* epsilon */ %prec no_optional_bar

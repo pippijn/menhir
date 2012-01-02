@@ -27,7 +27,12 @@ let write program =
 	(* Typechecking should not fail at this stage. Omit #line directives. *)
 	None
       else
-	Some (Filename.basename filename)
+	(* 2011/10/19: do not use [Filename.basename]. The [#] annotations that
+	   we insert in the [.ml] file must retain their full path. This does
+	   mean that the [#] annotations depend on how menhir is invoked -- e.g.
+	   [menhir foo/bar.mly] and [cd foo && menhir bar.mly] will produce
+	   different files. Nevertheless, this seems useful/reasonable. *)
+	Some filename
     let raw_stretch_action = false
   end) in
   P.program program
@@ -38,12 +43,19 @@ let write program =
    module language.) *)
 
 let () =
-  if Settings.table then
-    let module B = TableBackend.Run (struct end) in
-    write B.program
+  if Settings.coq then
+    let module B = CoqBackend.Run (struct end) in
+    let filename = Settings.base ^ ".v" in
+    let f = open_out filename in
+    B.write_all f;
+    exit 0
   else
-    let module B = CodeBackend.Run (struct end) in
-    write (Inliner.inline B.program)
+    if Settings.table then
+      let module B = TableBackend.Run (struct end) in
+      write B.program
+    else
+      let module B = CodeBackend.Run (struct end) in
+      write (Inliner.inline B.program)
 
 (* Write the interface file. *)
 

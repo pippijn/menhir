@@ -135,6 +135,18 @@ let interpret_show_cst =
 let table = 
   ref false
 
+let coq = 
+  ref false
+
+let coq_no_complete =
+  ref false
+
+let coq_no_actions =
+  ref false
+
+let strict =
+  ref false
+
 type suggestion =
   | SuggestNothing
   | SuggestCompFlags
@@ -146,6 +158,9 @@ let suggestion =
 let options = Arg.align [
   "--base", Arg.Set_string base, "<basename> Specifies a base name for the output file(s)";
   "--comment", Arg.Set comment, " Include comments in the generated code";
+  "--coq", Arg.Set coq, " (undocumented)";
+  "--coq-no-complete", Arg.Set coq_no_complete, " (undocumented)";
+  "--coq-no-actions", Arg.Set coq_no_actions, " (undocumented)";
   "--depend", Arg.Unit (fun () -> depend := OMPostprocess), " Invoke ocamldep and display dependencies";
   "--dump", Arg.Set dump, " Describe the automaton in <basename>.automaton";
   "--error-recovery", Arg.Set recovery, " Attempt recovery by discarding tokens after errors";
@@ -175,6 +190,7 @@ let options = Arg.align [
   "--only-tokens", Arg.Unit tokentypeonly, " Generate token type definition only, no code";
   "--raw-depend", Arg.Unit (fun () -> depend := OMRaw), " Invoke ocamldep and echo its raw output";
   "--stdlib", Arg.Set_string stdlib_path, "<directory> Specify where the standard library lies";
+  "--strict", Arg.Set strict, " Warnings about the grammar are errors";
   "--suggest-comp-flags", Arg.Unit (fun () -> suggestion := SuggestCompFlags),
                           " Suggest compilation flags for ocaml{c,opt}";
   "--suggest-link-flags-byte", Arg.Unit (fun () -> suggestion := SuggestLinkFlags "cmo"),
@@ -259,7 +275,7 @@ let base =
 	fprintf stderr "%s\n" usage;
 	exit 1
     | [ filename ] ->
-	Filename.chop_suffix filename ".mly"
+	Filename.chop_suffix filename (if !coq then ".vy" else ".mly")
     | _ ->
 	fprintf stderr "Error: you must specify --base when providing multiple input files.\n";
 	exit 1
@@ -267,7 +283,7 @@ let base =
     !base
 
 let filenames = 
-  if !no_stdlib then
+  if !no_stdlib || !coq then
     filenames
   else 
     stdlib_filename :: filenames
@@ -337,4 +353,16 @@ let interpret_show_cst =
 
 let table = 
   !table
+
+let coq = 
+  !coq
+
+let coq_no_complete =
+  !coq_no_complete
+
+let coq_no_actions =
+  !coq_no_actions
+
+let strict =
+  !strict
 

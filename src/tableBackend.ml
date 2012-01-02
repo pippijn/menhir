@@ -115,7 +115,7 @@ let reducecellparams prod i symbol (next : pattern) : pattern =
 
 (* The semantic values bound in [reducecellparams] have type [Obj.t].
    They should now be cast to their real type. If we had [PMagic] in
-   the syntax of patterns, we could that in one swoop; since we don't,
+   the syntax of patterns, we could do that in one swoop; since we don't,
    we have to issue a series of casts a posteriori. *)
 
 let reducecellcasts prod i symbol casts =
@@ -159,7 +159,7 @@ let reducebody prod =
   (* At the same time, build a series of casts. *)
 
   let (_ : int), pat, casts =
-    Invariant.fold (fun (i, pat, casts) (_ : bool) symbol ->
+    Invariant.fold (fun (i, pat, casts) (_ : bool) symbol _ ->
       i + 1,
       reducecellparams prod i symbol pat,
       reducecellcasts prod i symbol casts

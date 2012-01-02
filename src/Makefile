@@ -3,6 +3,12 @@
 COLD         += clean
 
 # ----------------------------------------------------------------------------
+
+# A few settings differ on Windows versus Unix.
+
+include ../Makefile.arch
+
+# ----------------------------------------------------------------------------
 # Locating the ocaml compilers.
 # If ocamlfind is available, then it is used for that purpose.
 
@@ -42,7 +48,7 @@ LNKBFLAGS    := -g
 LNKOFLAGS    :=
 BLIBS        := unix.cma
 OLIBS        := unix.cmxa
-PGFLAGS      := -v -lg 1 -la 1 -lc 1 --comment --infer --error-recovery --stdlib .
+PGFLAGS      := -v -lg 1 -la 1 -lc 1 --comment --infer --error-recovery --stdlib . --strict
 
 # -------------------------------------------------------------------------
 
@@ -71,32 +77,36 @@ engine tableFormat tableInterpreter convert
 
 # A list of the modules that must be linked into the Menhir executable.
 
-MODULES := menhirLib stringSet stringMap mark compressedBitSet		\
-           unionFind tarjan patricia misc option breadth listMonad dot	\
-           installation version settings time positions error		\
-           parameters keyword lineCount printer rawPrinter action	\
-           parserAux parser lexer partialGrammar parameterizedGrammar	\
-           reachability unparameterizedPrinter preFront codeBits	\
-           tokenType interface IO lexmli lexdep infer			\
-           nonTerminalDefinitionInlining front grammar item lr0 lr1	\
-           lr1partial derivation conflict invariant codePieces		\
+MODULES := menhirLib Fix stringSet stringMap mark compressedBitSet	\
+           unionFind tarjan nonpositiveCycles patricia misc option	\
+           breadth listMonad dot installation version settings time	\
+           positions error parameters keyword lineCount printer		\
+           rawPrinter action parserAux parser lexer partialGrammar	\
+           parameterizedGrammar reachability unparameterizedPrinter	\
+           preFront codeBits tokenType interface IO lexmli lexdep	\
+           infer nonTerminalDefinitionInlining front grammar item lr0	\
+           slr lr1 lr1partial derivation conflict invariant codePieces	\
            sentenceParser sentenceLexer pprint cst			\
            referenceInterpreter interpret tableBackend codeBackend	\
-           traverse inliner back
+           coqBackend traverse inliner back
 
 # -------------------------------------------------------------------------
 
-# How to bootstrap. Set TARGET to byte or opt depending on the desired
-# architecture. In either case, the resulting executable is named
-# menhir.
+# How to bootstrap.
+
+# Set TARGET to byte or opt depending on the desired architecture.
 
 ifndef TARGET
   TARGET     := opt
 endif
 
+# The variable GOAL is the name of the executable file.
+
 GOAL         := menhir.$(TARGET)
 
-menhir: .versioncheck
+# We create a symbolic link of GOAL to MENHIREXE.
+
+$(MENHIREXE): .versioncheck
 # Build a stage one executable using ocamlyacc.
 	$(MAKE) -s PGEN="$(CAMLYACC)" PARSER=parser $(GOAL)
 # Remove the ocamlyacc-built parser.
@@ -118,7 +128,7 @@ menhir: .versioncheck
 # Rename the stage two executable to the desired name.
 # Use a symbolic link, so that further development builds implicitly update
 # menhir.
-	@ln -sf $(GOAL) menhir
+	@ln -sf $(GOAL) $@
 
 # -------------------------------------------------------------------------
 
@@ -161,8 +171,8 @@ endif
 # Cleaning up.
 
 clean::
-	/bin/rm -f menhir.byte menhir.opt menhir
-	/bin/rm -f *.cmi *.cmx *.cmo *.o *.obj *~ .*~
+	/bin/rm -f menhir.byte menhir.opt $(MENHIREXE)
+	/bin/rm -f *.cmi *.cmx *.cmo *.$(OBJ) *~ .*~
 	/bin/rm -f reference.ml reference.mli $(GENERATED)
 	/bin/rm -f .depend *.conflicts *.automaton *.annot *.output
 

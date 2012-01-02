@@ -5,6 +5,16 @@
    <filenames> listed appear to exist. The files are created, if
    required, before the command is run, and destroyed afterwards. *)
 
+(* An earlier version of this script acquired a lock, so as to prevent
+   multiple instances of this script from interfering with one another.
+   However, this did not prevent interference between this script and
+   some other process (e.g., the ocaml compiler) which creates files.
+   So, the lock has been removed. My suggestion is to never use this
+   script in a concurrent setting. If you wish to use parallel make,
+   then you might be able to use a two-level Makefile approach: first,
+   compute all dependencies in a sequential manner; then, construct all
+   targets in a parallel manner. *)
+
 #load "unix.cma"
 open Printf
 
@@ -53,19 +63,6 @@ let rec loop accumulating i =
 
 let () =
   loop true 1
-
-(* Acquire a lock, so as to prevent multiple instances of this script from
-   interfering with one another. The lock is implicitly released when the
-   script terminates. *)
-
-module Lock = struct
-
-  open Unix
-
-  let () =
-    lockf (openfile "/tmp/ocamldep.wrapper.lock" [ Unix.O_RDWR; O_CREAT ] 0o600) F_LOCK 0
-
-end
 
 (* Create the required files if they don't exist, run the command,
    then destroy any files that we have created. *)

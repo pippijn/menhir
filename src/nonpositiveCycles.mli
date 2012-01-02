@@ -12,12 +12,13 @@
 (*                                                                        *)
 (**************************************************************************)
 
-(* This module provides an implementation of Tarjan's algorithm for
-   finding the strongly connected components of a graph.
+(* This module uses Floyd and Warshall's algorithm to detect whether a graph
+   with integer-weighted edges contains a simple cycle of negative weight. *)
 
-   The algorithm runs when the functor is applied. Its complexity is
-   $O(V+E)$, where $V$ is the number of vertices in the graph $G$, and
-   $E$ is the number of edges. *)
+(* The algorithm runs in cubic time in the number of vertices. It may be
+   worthwhile to first use Tarjan's algorithm to obtain the graph's strongly
+   connected components, and use Floyd and Warshall's algorithm only on each
+   component. *)
 
 module Run (G : sig
 
@@ -29,9 +30,9 @@ module Run (G : sig
   val n: int
   val index: node -> int
 
-  (* Iterating over a node's immediate successors. *)
+  (* Iterating over a node's immediate successors. Edges are weighted. *)
 
-  val successors: (node -> unit) -> node -> unit
+  val successors: (int -> node -> unit) -> node -> unit
 
   (* Iterating over all nodes. *)
 
@@ -39,24 +40,7 @@ module Run (G : sig
 
 end) : sig
 
-  open G
-
-  (* This function maps each node to a representative element of its strongly connected component. *)
-
-  val representative: node -> node
-
-  (* This function maps each representative element to a list of all
-     members of its strongly connected component. Non-representative
-     elements are mapped to an empty list. *)
-
-  val scc: node -> node list
-
-  (* [iter action] allows iterating over all strongly connected
-     components. For each component, the [action] function is applied
-     to the representative element and to a (non-empty) list of all
-     elements. *)
-
-  val iter: (node -> node list -> unit) -> unit
+  val graph_has_nonpositive_simple_cycle : bool
 
 end
 

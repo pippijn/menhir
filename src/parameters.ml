@@ -78,3 +78,6 @@ let position = function
   | ParameterVar x 
   | ParameterApp (x, _) ->
       Positions.position x
+
+let with_pos p =
+  Positions.with_pos (position p) p

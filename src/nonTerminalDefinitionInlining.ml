@@ -122,7 +122,7 @@ let inline grammar =
       let prefix, p, nt, psym, suffix = find_inline_producer b in
 	use_inline := true;
 	if Action.use_dollar b.action then
-	  Error.errorN [ b.branch_position ]
+	  Error.error [ b.branch_position ]
 	    (Printf.sprintf 
 	       "You cannot use %s and the $i syntax in this branch since the \
                definition of %s has to be inlined."
@@ -196,7 +196,7 @@ let inline grammar =
     try 
       (match expanded_state k with
 	 | BeingExpanded ->
-    	     Error.errorN
+    	     Error.error
 	       r.positions
 	       (Printf.sprintf "there is a cycle in the definition of %s." k)
 	 | Expanded r ->
@@ -213,11 +213,22 @@ let inline grammar =
       (fun _ r -> 
 	 if r.inline_flag 
 	   && List.exists (fun b -> Action.use_dollar b.action) r.branches then
-	     Error.errorN r.positions 
+	     Error.error r.positions 
 	       (Printf.sprintf 
 		  "You cannot use $i syntax in this branch since its \
                    definition will be inlined."))
       grammar.rules
+  in
+
+    (* If we are in Coq mode, %inline is forbidden. *)
+  let _ =
+    if Settings.coq then
+      StringMap.iter 
+        (fun _ r -> 
+	   if r.inline_flag then
+             Error.error r.positions
+               (Printf.sprintf "%%inline is not supported by the coq back-end"))
+        grammar.rules
   in
 
     (* To expand a grammar, we expand all its rules and remove 

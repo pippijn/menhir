@@ -40,21 +40,17 @@
   (* Extracts a chunk out of the source file. *)    
 
   let chunk ofs1 ofs2 =
+    let contents = Error.get_file_contents() in
     let len = ofs2 - ofs1 in
-    let c = Error.get_file() in
-    let p = pos_in c in
-    seek_in c ofs1;
-    let buffer = String.create len in
-    really_input c buffer 0 len;
-    seek_in c p;
-    buffer
+    String.sub contents ofs1 len
 
   (* Extracts a chunk out of the source file, delimited by
      one position and extending to the end of the file. *)
 
   let echunk ofs1 =
-   let c = Error.get_file() in
-    chunk ofs1 (in_channel_length c)
+    let contents = Error.get_file_contents() in
+    let len = String.length contents - ofs1 in
+    String.sub contents ofs1 len
 
   (* Overwrites an old character with a new one at a specified
      offset in a string. *)
@@ -114,7 +110,7 @@
 	(String.make (pos1.pos_cnum - pos1.pos_bol) ' ') ^ content
     in
     {
-      Stretch.stretch_filename = Error.get_basename();
+      Stretch.stretch_filename = Error.get_filename();
       Stretch.stretch_linenum = pos1.pos_lnum;
       Stretch.stretch_linecount = pos2.pos_lnum - pos1.pos_lnum;
       Stretch.stretch_content = content;
@@ -152,69 +148,74 @@
     let keyword = Keyword.Position (subject, where, flavor) in
     with_cpos lexbuf keyword
 
-(* Objective Caml's reserved words. *)
+  (* Objective Caml's reserved words. *)
 
-let reserved =
-  let table = Hashtbl.create 149 in
-  List.iter (fun word -> Hashtbl.add table word ()) [
-    "and";
-    "as";
-    "assert";
-    "begin";
-    "class";
-    "constraint";
-    "do";
-    "done";
-    "downto";
-    "else";
-    "end";
-    "exception";
-    "external";
-    "false";
-    "for";
-    "fun";
-    "function";
-    "functor";
-    "if";
-    "in";
-    "include";
-    "inherit";
-    "initializer";
-    "lazy";
-    "let";
-    "match";
-    "method";
-    "module";
-    "mutable";
-    "new";
-    "object";
-    "of";
-    "open";
-    "or";
-    "parser";
-    "private";
-    "rec";
-    "sig";
-    "struct";
-    "then";
-    "to";
-    "true";
-    "try";
-    "type";
-    "val";
-    "virtual";
-    "when";
-    "while";
-    "with";
-    "mod";
-    "land";
-    "lor";
-    "lxor";
-    "lsl";
-    "lsr";
-    "asr";
-  ];
-  table
+  let reserved =
+    let table = Hashtbl.create 149 in
+    List.iter (fun word -> Hashtbl.add table word ()) [
+      "and";
+      "as";
+      "assert";
+      "begin";
+      "class";
+      "constraint";
+      "do";
+      "done";
+      "downto";
+      "else";
+      "end";
+      "exception";
+      "external";
+      "false";
+      "for";
+      "fun";
+      "function";
+      "functor";
+      "if";
+      "in";
+      "include";
+      "inherit";
+      "initializer";
+      "lazy";
+      "let";
+      "match";
+      "method";
+      "module";
+      "mutable";
+      "new";
+      "object";
+      "of";
+      "open";
+      "or";
+      "parser";
+      "private";
+      "rec";
+      "sig";
+      "struct";
+      "then";
+      "to";
+      "true";
+      "try";
+      "type";
+      "val";
+      "virtual";
+      "when";
+      "while";
+      "with";
+      "mod";
+      "land";
+      "lor";
+      "lxor";
+      "lsl";
+      "lsr";
+      "asr";
+    ];
+    table
+
+  (* A short-hand. *)
+
+  let error1 pos msg =
+    Error.error (Positions.one pos) msg
 
 }
 
@@ -324,7 +325,7 @@ rule main = parse
 | eof
     { EOF }
 | _
-    { Error.error1 (lexeme_start_p lexbuf) "unexpected character(s)." }
+    { error1 (lexeme_start_p lexbuf) "unexpected character(s)." }
 
 (* Skip C style comments. *)
 
@@ -334,7 +335,7 @@ and comment openingpos = parse
 | "*/"
     { () }
 | eof
-    { Error.error1 openingpos "unterminated comment." }
+    { error1 openingpos "unterminated comment." }
 | _
     { comment openingpos lexbuf }
 
@@ -352,7 +353,7 @@ and ocamltype openingpos = parse
 | newline
     { update_loc lexbuf; ocamltype openingpos lexbuf }
 | eof
-    { Error.error1 openingpos "unterminated Objective Caml type." }
+    { error1 openingpos "unterminated Objective Caml type." }
 | _
     { ocamltype openingpos lexbuf }
 
@@ -374,7 +375,7 @@ and action percent openingpos pkeywords = parse
 	  lexeme_start_p lexbuf, pkeywords
       | _, _ ->
 	  (* This is not it. *)
-	  Error.error1 openingpos "unbalanced opening brace."
+	  error1 openingpos "unbalanced opening brace."
     }
 | '('
     { let _, pkeywords = parentheses (lexeme_end_p lexbuf) pkeywords lexbuf in
@@ -405,7 +406,7 @@ and action percent openingpos pkeywords = parse
       action percent openingpos pkeywords lexbuf }
 | ')'
 | eof
-    { Error.error1 openingpos "unbalanced opening brace." }
+    { error1 openingpos "unbalanced opening brace." }
 | _
     { action percent openingpos pkeywords lexbuf }
 
@@ -440,7 +441,7 @@ and parentheses openingpos pkeywords = parse
     { update_loc lexbuf; parentheses openingpos pkeywords lexbuf }
 | '}'
 | eof
-    { Error.error1 openingpos "unbalanced opening parenthesis." }
+    { error1 openingpos "unbalanced opening parenthesis." }
 | _
     { parentheses openingpos pkeywords lexbuf }
 
@@ -462,7 +463,7 @@ and ocamlcomment openingpos = parse
 | newline
     { update_loc lexbuf; ocamlcomment openingpos lexbuf }
 | eof
-    { Error.error1 openingpos "unterminated Objective Caml comment." }
+    { error1 openingpos "unterminated Objective Caml comment." }
 | _
     { ocamlcomment openingpos lexbuf }
 
@@ -479,7 +480,7 @@ and string openingpos = parse
       unless it is a newline. Pretty crude, but should work. *)
    { string openingpos lexbuf }
 | eof 
-   { Error.error1 openingpos "unterminated Objective Caml string." }
+   { error1 openingpos "unterminated Objective Caml string." }
 | _
    { string openingpos lexbuf }
 

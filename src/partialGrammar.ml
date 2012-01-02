@@ -97,18 +97,8 @@ let join_declaration filename (grammar : grammar) decl =
   (* Type declarations for nonterminals. *)
 
   | DType (ocamltype, nonterminal) ->
-      begin
-	try
-	  let _ = StringMap.find nonterminal grammar.p_types in
-	  Error.errorp decl
-	    (Printf.sprintf
-	       "There are multiple %%type definitions for nonterminal %s." 
-	       nonterminal)
-	with Not_found ->
-	  { grammar with
-            p_types = StringMap.add nonterminal 
-	      (with_pos (position decl) ocamltype) grammar.p_types  }
-      end
+      { grammar with
+          p_types = (nonterminal, with_pos (position decl) ocamltype)::grammar.p_types }
 
   (* Token associativity and precedence. *)
 
@@ -138,7 +128,7 @@ let join_declaration filename (grammar : grammar) decl =
       (* Reject duplicate precedence declarations. *)
 
       if token_properties.tk_associativity <> UndefinedAssoc then 
-	Error.errorN
+	Error.error
 	  [ decl.position; token_properties.tk_position ]
 	  (Printf.sprintf "there are multiple precedence declarations for token %s." terminal);
 
@@ -266,7 +256,7 @@ let is_valid_nonterminal_character = function
       false
 
 let restrict filename =
-  let m = String.copy (Filename.chop_suffix filename ".mly") in
+  let m = String.copy (Filename.chop_suffix filename (if Settings.coq then ".vy" else ".mly")) in
   for i = 0 to String.length m - 1 do
     if not (is_valid_nonterminal_character m.[i]) then
       m.[i] <- '_'
@@ -330,7 +320,7 @@ let store_symbol symbols symbol kind =
 	   particular unit. This is forbidden. *)
 	| (PublicNonTerminal p | PrivateNonTerminal p),
 	  (PublicNonTerminal p' | PrivateNonTerminal p') ->
-	    Error.errorN [ p; p'] 
+	    Error.error [ p; p'] 
 	      (Printf.sprintf 
 		 "the nonterminal symbol %s is multiply defined."
 		 symbol)
@@ -338,7 +328,7 @@ let store_symbol symbols symbol kind =
 	(* The symbol is known to be a token but declared as a non terminal.*)
 	| (Token tkp, (PrivateNonTerminal p | PublicNonTerminal p)) 
 	| ((PrivateNonTerminal p | PublicNonTerminal p), Token tkp) ->
-	    Error.errorN [ p; tkp.tk_position ]
+	    Error.error [ p; tkp.tk_position ]
 	      (Printf.sprintf 
 		 "The identifier %s is a reference to a token."
 		 symbol)
@@ -362,14 +352,14 @@ let store_used_symbol position tokens symbols symbol =
 
 let non_terminal_is_not_reserved symbol positions = 
   if symbol = "error" then
-    Error.errorN positions
+    Error.error positions
       (Printf.sprintf "%s is reserved and thus cannot be used \
                        as a non-terminal symbol." symbol)
 
 let non_terminal_is_not_a_token tokens symbol positions = 
   try
     let tkp = StringMap.find symbol tokens in
-      Error.errorN (positions @ [ tkp.tk_position ])
+      Error.error (positions @ [ tkp.tk_position ])
       (Printf.sprintf 
 	 "The identifier %s is a reference to a token."
 	 symbol)
@@ -505,7 +495,7 @@ let merge_rules tokens symbols pgs =
     List.iter 
       (iter_on_only_used_symbols 
 	 (fun k pos -> if not (StringSet.mem k public_symbols) then
-	    Error.errorN [ pos ]
+	    Error.error [ pos ]
 	      (Printf.sprintf "%s is undefined." k)))
       symbols
   in
@@ -557,11 +547,11 @@ let merge_rules tokens symbols pgs =
 		in
 		  (* The arity of the parameterized symbols must be constant.*)
 		  if ra <> ra' then 
-		    Error.errorN positions 
+		    Error.error positions 
 		      (Printf.sprintf "symbol %s is defined with arities %d and %d."
 			 r.pr_nt ra ra')
 		  else if r.pr_inline_flag <> r'.pr_inline_flag then
-		    Error.errorN positions
+		    Error.error positions
 		      (Printf.sprintf 
 			 "not all definitions of %s are marked %%inline." r.pr_nt)
 		  else 
@@ -589,7 +579,7 @@ let empty_grammar =
     p_postludes               = [];
     p_parameters              = [];
     p_start_symbols           = StringMap.empty;
-    p_types                   = StringMap.empty;
+    p_types                   = [];
     p_tokens                  = StringMap.empty;
     p_rules                   = StringMap.empty
   }
@@ -649,21 +639,28 @@ let check_parameterized_grammar_is_well_defined grammar =
   StringMap.iter 
     (fun nonterminal p ->
        if not (StringMap.mem nonterminal grammar.p_rules) then
-	 Error.errorN [p] (Printf.sprintf "the start symbol %s is undefined." 
+	 Error.error [p] (Printf.sprintf "the start symbol %s is undefined." 
 			   nonterminal);
-       if not (StringMap.mem nonterminal grammar.p_types) then
-	 Error.errorN [p]
+       if not (List.exists (function 
+                            | ParameterVar { value = id }, _ -> id = nonterminal
+                            | _ -> false) grammar.p_types) then
+	 Error.error [p]
 	   (Printf.sprintf 
 	      "the type of the start symbol %s is unspecified." nonterminal);
     ) grammar.p_start_symbols;
 
-  StringMap.iter 
-    (fun symbol ty ->
-       if not (StringMap.mem symbol grammar.p_rules) then
-	 Error.errorp ty 
-	   (Printf.sprintf 
-	      "this is a terminal symbol.\n\
-               %%type declarations are applicable only to nonterminal symbols."))
+  let rec parameter_head_symb = function
+    | ParameterVar id -> id
+    | ParameterApp (id, _) -> id
+  in
+
+  List.iter (fun (symbol, _) ->
+    let head_symb = parameter_head_symb symbol in
+    if not (StringMap.mem (value head_symb) grammar.p_rules) then
+      Error.errorp (Parameters.with_pos symbol)
+	(Printf.sprintf
+	   "this is a terminal symbol.\n\
+             %%type declarations are applicable only to nonterminal symbols."))
     grammar.p_types;
 
   (* Every reference to a symbol is well defined. *)
@@ -681,7 +678,7 @@ let check_parameterized_grammar_is_well_defined grammar =
 	   || StringMap.mem s grammar.p_tokens
 	   || List.mem s prule.pr_parameters
 	   || List.mem s reserved) then
-      Error.errorN [ p ] (Printf.sprintf "%s is undefined." s)
+      Error.error [ p ] (Printf.sprintf "%s is undefined." s)
   in
     StringMap.iter
       (fun k prule -> List.iter
@@ -702,7 +699,7 @@ let check_parameterized_grammar_is_well_defined grammar =
 		   | Some id -> 
 		       (* Check the producer id is unique. *)
 		       if StringSet.mem id.value already_seen then
-			 Error.errorN [ id.position ]
+			 Error.error [ id.position ]
 			   (Printf.sprintf
 			      "there are multiple producers named %s in this sequence." 
 			      id.value);
@@ -751,7 +748,7 @@ let check_parameterized_grammar_is_well_defined grammar =
 	 (* It is forbidden to use %inline on a %start symbol. *)
 	 if (prule.pr_inline_flag 
 	     && StringMap.mem k grammar.p_start_symbols) then
-	   Error.errorN prule.pr_positions 
+	   Error.error prule.pr_positions 
 	     (Printf.sprintf 
 		"%s cannot be both a start symbol and inlined." k);
 
@@ -765,7 +762,7 @@ let check_parameterized_grammar_is_well_defined grammar =
   | Settings.CodeOnly _ ->
       StringMap.iter (fun token { tk_position = p } -> 
 	if not (StringSet.mem token !used_tokens) then
-	  Error.warningN [p] 
+	  Error.warning [p] 
 	    (Printf.sprintf "the token %s is unused." token)
       ) grammar.p_tokens
   end;

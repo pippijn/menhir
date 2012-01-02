@@ -118,4 +118,15 @@ val cpos : Lexing.lexbuf -> t
     the lexer's current position. *)
 val string_of_cpos : Lexing.lexbuf -> string
 
+(* The functions that print error messages and warnings require a list of
+   positions. The following auxiliary functions help build such lists. *)
+
+type positions =
+    t list
+
+val one: Lexing.position -> positions
+
+val two: Lexing.position -> Lexing.position -> positions
+
+val lexbuf: Lexing.lexbuf -> positions
 

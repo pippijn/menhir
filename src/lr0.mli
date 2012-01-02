@@ -34,7 +34,8 @@ val n: int
 
 val entry: node ProductionMap.t
 
-(* A node can be converted to the underlying LR(0) set of items. *)
+(* A node can be converted to the underlying LR(0) set of items. This set is
+   not closed. *)
 
 val items: node -> Item.Set.t
 

@@ -38,10 +38,10 @@ type word
 
 (* [fold] folds over a word. At each cell, [f] is applied to the
    accumulator, to a Boolean flag that tells whether the cell holds a
-   state, and to the symbol associated with the cell. The stack is
-   visited from bottom to top. *)
+   state, to the set of possible states of the cell, and to the symbol 
+   associated with the cell. The stack is visited from bottom to top. *)
 
-val fold: ('a -> bool -> Symbol.t -> 'a) -> 'a -> word -> 'a
+val fold: ('a -> bool -> Symbol.t -> Lr1.NodeSet.t -> 'a) -> 'a -> word -> 'a
 
 (* [fold_top f accu s] is analogous to [fold], but only folds over the
    top stack cell, if there is one, so that [f] is either not invoked

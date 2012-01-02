@@ -67,6 +67,13 @@ type token_properties =
       mutable  tk_is_declared   : bool; 
     }
 
+type parameter = 
+  | ParameterVar of symbol Positions.located
+  | ParameterApp of symbol Positions.located * parameters
+
+and parameters = 
+    parameter list
+
 type declaration =
 
     (* Raw Objective Caml code. *)
@@ -91,7 +98,7 @@ type declaration =
 
     (* Type declaration. *)
 
-  | DType of Stretch.ocamltype * nonterminal
+  | DType of Stretch.ocamltype * parameter
 
 type branch_shift_precedence =
     symbol Positions.located option
@@ -99,13 +106,6 @@ type branch_shift_precedence =
 type branch_reduce_precedence =
     precedence_level
 
-type parameter = 
-  | ParameterVar of symbol Positions.located
-  | ParameterApp of symbol Positions.located * parameters
-
-and parameters = 
-    parameter list
-      
 type producer =
     identifier Positions.located option * parameter
 

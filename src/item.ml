@@ -243,6 +243,11 @@ module Closure (L : Lookahead.S) = struct
      in fact uninhabited. In other words, this is a pathological
      case. *)
 
+  (* Yes, indeed, this is called a cycle in Aho & Ullman's book,
+     and a loop in Grune & Jacobs' book. It is not difficult to
+     see that (provided all symbols are inhabited) the grammar
+     is infinitely ambiguous if and only if there is a loop. *)
+
   module P = struct
 
     type foo = node
@@ -271,7 +276,7 @@ module Closure (L : Lookahead.S) = struct
     let items = List.map (fun node -> node.item) scc in
     let positions = List.flatten (List.map positions items) in
     let names = String.concat "\n" (List.map print items) in
-    Error.errorN
+    Error.error
       positions
       (Printf.sprintf "the grammar is ambiguous.\n\
                        The following items participate in an epsilon-cycle:\n\

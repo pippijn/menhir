@@ -12,13 +12,11 @@
 (*                                                                        *)
 (**************************************************************************)
 
-type grammar = 
-    {
-      p_preludes	   : Stretch.t list;
-      p_postludes          : Syntax.trailer list;
-      p_parameters         : Stretch.t list;
-      p_start_symbols      : Positions.t StringMap.t;
-      p_types              : (Syntax.parameter * Stretch.ocamltype Positions.located) list;
-      p_tokens	           : Syntax.token_properties StringMap.t;
-      p_rules	           : Syntax.parameterized_rule StringMap.t;
-    }
+(* This module extends the LR(0) automaton with lookahead information in order
+   to construct an SLR(1) automaton. The lookahead information is obtained by
+   considering the FOLLOW sets. *)
+
+(* This construction is not used by Menhir, but can be used to check whether
+   the grammar is in the class SLR(1). This check is performed when the log
+   level [lg] is at least 1. *)
+

@@ -55,7 +55,7 @@ let check_production_group right_hand_sides pos1 pos2 action =
 				  (IdSet.diff ids ids')
 				  (IdSet.diff ids' ids))
 	    in
-	    Error.errorp id
+	    Error.error [Positions.position id]
 	      "Two productions that share a semantic action must define\n\
 	       exactly the same identifiers."
 	  with Not_found ->
@@ -64,7 +64,7 @@ let check_production_group right_hand_sides pos1 pos2 action =
   end;
   begin
     if List.length right_hand_sides > 1 && Action.use_dollar action then
-      Error.signal pos1 pos2
+      Error.signal (Positions.two pos1 pos2)
 	"A semantic action that is shared between several productions must\n\
  	 not use the $i notation -- semantic values must be named instead."
   end
@@ -72,7 +72,7 @@ let check_production_group right_hand_sides pos1 pos2 action =
 let override pos o1 o2 =
   match o1, o2 with
   | Some _, Some _ ->
-      Error.signalN [ pos ] "This production carries two %prec declarations.";
+      Error.signal [ pos ] "This production carries two %prec declarations.";
       o2
   | None, Some _ ->
       o2

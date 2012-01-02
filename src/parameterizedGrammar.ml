@@ -58,6 +58,9 @@ let var_name =
 
 (* [string_of_nt_type] is a simple pretty printer for types (they can be 
    recursive). *)
+
+(* 2011/04/05: types can no longer be recursive, but I won't touch the printer -fpottier *)
+
 let string_of paren_fun ?paren ?colors t : string = 
   let colors = 
     match colors with 
@@ -115,7 +118,39 @@ let print_env =
   List.iter (fun (k, (_, v)) -> 
 	       Printf.eprintf "%s: %s\n" k (string_of_var v))
 
+(* [occurs_check x y] checks that [x] does not occur within [y]. *)
+
+let dfs action x =
+
+  let black = Mark.fresh () in
+
+  let rec visit_var x =
+    let descr = UnionFind.find x in 
+    if not (Mark.same descr.mark black) then begin
+      descr.mark <- black;
+      action x;
+      match descr.structure with
+      | None ->
+	  ()
+      | Some t -> 
+	  visit_term t
+    end
+
+  and visit_term (Arrow ins) =
+    List.iter visit_var ins
+
+  in
+  visit_var x
+
+exception OccursError of variable * variable
+
+let occurs_check x y =
+  dfs (fun z -> if UnionFind.equivalent x z then raise (OccursError (x, y))) y
+
 (* First order unification. *)
+
+(* 2011/04/05: perform an eager occurs check and prevent the construction
+   of any cycles. *)
 
 let fresh_flexible_variable () = 
   UnionFind.fresh { structure = None; name = None; mark = Mark.none }
@@ -133,10 +168,10 @@ let rec unify_var toplevel x y =
   if not (UnionFind.equivalent x y) then
     let reprx, repry = UnionFind.find x, UnionFind.find y in
       match reprx.structure, repry.structure with
-	  None, Some t    -> UnionFind.union x y
-	| Some t, None    -> UnionFind.union y x
+	  None, Some t    -> occurs_check x y; UnionFind.union x y
+	| Some t, None    -> occurs_check y x; UnionFind.union y x
 	| None, None      -> UnionFind.union x y
-	| Some t, Some t' -> unify toplevel t t'
+	| Some t, Some t' -> unify toplevel t t'; UnionFind.union x y
 	    
 and unify toplevel t1 t2 = 
   match t1, t2 with
@@ -146,51 +181,14 @@ and unify toplevel t1 t2 =
 	if n1 <> n2 then
 	  if n1 = 0 || n2 = 0 || not toplevel then
 	    raise (UnificationError (t1, t2))
-	  else 
+	  else
+	    (* the flag [toplevel] is used only here and influences which
+	       exception is raised; BadArityError is raised only at toplevel *)
 	    raise (BadArityError (n1, n2));
 	List.iter2 (unify_var false) ins ins'
 
 let unify_var x y =
   unify_var true x y
-
-(* [occurs_check env] checks that the non terminal is not in a cyclic
-   multi-equation. *)
-exception Cycle
-
-let occurs_check env =
-  let test_recursive_type t = 
-
-    let white = Mark.fresh ()
-    and black = Mark.fresh () 
-    in
-
-    let rec mark_var x =
-      let descr = UnionFind.find x in 
-	if Mark.same descr.mark black then
-	  raise Cycle 
-	else 
-	  (match descr.structure with
-	       None -> ()
-	     | Some t -> 
-		   descr.mark <- black; 
-		   traverse t; 
-		   descr.mark <- white)
-	    
-    and traverse (Arrow ins) =
-      List.iter mark_var ins
-    in
-      mark_var t
-  in
-    List.iter 
-      (function (e, (pos, t)) -> 
-	 try 
-	   test_recursive_type t
-	 with Cycle ->
-	   Error.errorN pos
-	     (Printf.sprintf
-		"%s is used in an inconsistent way.\n\
-	         Technically, it is used at a recursive sort." e)
-      ) env
 
 (* Typing environment. *)
 type environment =
@@ -205,7 +203,7 @@ let lookup x (env: environment) =
     snd (List.assoc x env)
   with Not_found -> star_variable
 
-(* This function check that the symbol [k] has the type [expected_type]. *)
+(* This function checks that the symbol [k] has the type [expected_type]. *)
 let check positions env k expected_type =
   let inference_var = lookup k env in
   let checking_var = fresh_structured_variable expected_type in
@@ -213,7 +211,7 @@ let check positions env k expected_type =
       unify_var inference_var checking_var
     with 
 	UnificationError (t1, t2) ->
-	  Error.errorN
+	  Error.error
 	    positions
 	    (Printf.sprintf 
 	       "How is this symbol parameterized?\n\
@@ -223,11 +221,22 @@ let check positions env k expected_type =
 	       (string_of_nt_type t1) (string_of_nt_type t2))
 	    
       | BadArityError (n1, n2) ->
-	  Error.errorN
+	  Error.error
 	    positions
 	    (Printf.sprintf
 	       "does this symbol expect %d or %d arguments?" 
 	       (min n1 n2) (max n1 n2))
+
+      | OccursError (x, y) ->
+	  Error.error
+	    positions
+	    (Printf.sprintf 
+	       "How is this symbol parameterized?\n\
+	      It is used at sorts %s and %s.\n\
+              The sort %s cannot be unified with the sort %s."
+	       (string_of_var inference_var) (string_of_var checking_var)
+	       (string_of_var x) (string_of_var y))
+	  
 
 
 (* An identifier can be used either in a total application or as a
@@ -393,7 +402,7 @@ let check_grammar p_grammar =
 	     else (* Otherwise, we check that the arity is homogeneous 
 		     in the component. *) 
 	       if marked_components.(repr) <> parameters_len then 
-		 Error.errorN positions
+		 Error.error positions
 		   (Printf.sprintf 
 		      "Mutually recursive definitions must have the same parameters.\n\
                        This is not the case for %s and %s."
@@ -419,7 +428,7 @@ let check_grammar p_grammar =
 		       if ConnectedComponents.representative idx = repr then
 			 if not (actual_parameters_as_formal actuals params)
 			 then
-			   Error.errorN [ symbol.position ]
+			   Error.error [ symbol.position ]
 			     (Printf.sprintf
 				"Mutually recursive definitions must have the same \
                                  parameters.\n\
@@ -432,8 +441,7 @@ let check_grammar p_grammar =
 	 in
 	   check_type ();
 	   check_parameters ();
-	   check_producers ());
-    occurs_check env
+	   check_producers ())
 
       
 let rec subst_parameter subst = function
@@ -482,7 +490,7 @@ let expand p_grammar =
   let ensure_fresh name =
     let normalized_name = Misc.normalize name in
     if StringSet.mem normalized_name !names then
-      Error.error 
+      Error.error []
 	(Printf.sprintf "internal name clash over %s" normalized_name);
     names := StringSet.add normalized_name !names;
     name
@@ -586,20 +594,33 @@ let expand p_grammar =
 	 Expansion is not needed. *)
       with Not_found -> Positions.value sym 
   in
+  let rec types_from_list = function
+    | [] -> StringMap.empty
+    | (nt, ty)::q ->
+        let accu = types_from_list q in
+        let mangled = mangle nt in
+        if StringMap.mem mangled accu then
+          Error.error [Positions.position (Parameters.with_pos nt)]
+            (Printf.sprintf
+               "There are multiple %%type definitions for nonterminal %s."
+               mangled);
+        StringMap.add mangled (Positions.value ty) accu
+  in
+
   let start_symbols = StringMap.domain (p_grammar.p_start_symbols) in
   {
     preludes      = p_grammar.p_preludes;
     postludes	  = p_grammar.p_postludes;
     parameters    = p_grammar.p_parameters;
     start_symbols = start_symbols;
-    types         = StringMap.map Positions.value p_grammar.p_types;
+    types         = types_from_list p_grammar.p_types;
     tokens	  = p_grammar.p_tokens;
     rules	  = 
       let closed_rules = StringMap.fold 
 	(fun k prule rules -> 
 	   (* If [k] is a start symbol then it cannot be parameterized. *)
 	   if prule.pr_parameters <> [] && StringSet.mem k start_symbols then
-	     Error.error 
+	     Error.error []
 	       (Printf.sprintf "The start symbol `%s' cannot be parameterized."
 		  k);
 

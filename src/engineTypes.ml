@@ -24,7 +24,7 @@
 (* --------------------------------------------------------------------------- *)
 
 (* A stack is a linked list of cells. A sentinel cell -- which is its own
-   successor is used to mark the bottom of the stack. The sentinel cell
+   successor -- is used to mark the bottom of the stack. The sentinel cell
    itself is not significant -- it contains dummy values. *)
 
 type ('state, 'semantic_value) stack = {

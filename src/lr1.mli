@@ -63,6 +63,10 @@ val start2item: node -> Item.t
 
 val incoming_symbol: node -> Symbol.t option
 
+(* This maps a node to its predecessors. *)
+
+val predecessors: node -> node list
+
 (* This provides access to a node's transitions and reductions. *)
 
 val transitions: node -> node SymbolMap.t
@@ -73,12 +77,24 @@ val reductions: node -> Production.index list TerminalMap.t
 
 val invert : ProductionMap.key list TerminalMap.t -> TerminalSet.t ProductionMap.t
 
+(* Computing which terminal symbols a state is willing to act upon.
+
+   This function is currently unused, but could be used as part of an error
+   reporting system. *)
+
+val acceptable_tokens: node -> TerminalSet.t
+
 (* Iteration over all nodes. The order in which elements are examined,
    and the order of [map]'s output list, correspond to the numeric
    indices produced by [number] above. *)
 
-val fold: ('a -> node -> 'a) -> 'a -> 'a 
+val fold: ('a -> node -> 'a) -> 'a -> 'a
+val iter: (node -> unit) -> unit
 val map: (node -> 'a) -> 'a list
+
+(* Iteration over non-start nodes *)
+val foldx: ('a -> node -> 'a) -> 'a -> 'a
+val iterx: (node -> unit) -> unit
 
 (* Breadth-first iteration over all edges. See [Breadth]. *)
 
