@@ -1,6 +1,6 @@
 menhir (20111019.dfsg-1) unstable; urgency=low
 
-  * New upstream release.
+  * New upstream release (Closes: #583291).
   * Bump Standards-Version to 3.9.2, no changes needed.
 
  -- Mehdi Dogguy <mehdi@debian.org>  Mon, 02 Jan 2012 18:05:48 +0100
