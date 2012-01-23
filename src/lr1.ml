@@ -62,6 +62,12 @@ type node = {
 
     mutable mark: Mark.t;
 
+    (* (New as of 2012/01/23.) This flag records whether a shift/reduce
+       conflict in this node was solved in favor of neither (%nonassoc).
+       This is later used to forbid a default reduction at this node. *)
+
+    mutable forbid_default_reduction: bool;
+
   }
 
 module Node = struct
@@ -236,6 +242,7 @@ let create (state : Lr0.lr1state) : node =
     mark = Mark.none;
     predecessors = [];
     incoming_symbol = None;
+    forbid_default_reduction = false;
   } in
 
   (* Update the mapping of LR(0) cores to lists of nodes. *)
@@ -496,6 +503,7 @@ let () =
 
 		      incr silently_solved;
 		      node.transitions <- SymbolMap.remove (Symbol.T tok) node.transitions;
+		      node.forbid_default_reduction <- true;
 		      reductions
 
 		  | Precedence.DontKnow ->
@@ -635,6 +643,9 @@ let () =
 
 let n =
   !num
+
+let forbid_default_reduction node =
+  node.forbid_default_reduction
 
 (* ------------------------------------------------------------------------ *)
 (* Breadth-first iteration over all nodes. *)

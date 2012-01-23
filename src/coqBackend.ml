@@ -414,7 +414,7 @@ module Run (T: sig end) = struct
     fprintf f "    | Parser.Inter.Parsed_pr sem buffer_new =>\n";
     fprintf f "      exists word,\n";
     fprintf f "        buffer = Parser.Inter.app_str word buffer_new /\\\n";
-    fprintf f "        Gram.has_semantic_value start_symbol word sem\n";
+    fprintf f "        Gram.has_semantic_value word sem\n";
     fprintf f "    | _ => True\n";
     fprintf f "  end.\n";
     fprintf f "Proof. apply Parser.parse_correct. Qed.\n\n";
@@ -423,19 +423,21 @@ module Run (T: sig end) = struct
       begin
         fprintf f "Theorem parse_complete (iterator:nat) word buffer_end (output:%s):\n"
           (print_type (Nonterminal.ocamltype start_nt));
-        fprintf f "  Gram.has_semantic_value (%s) word output ->\n" (print_symbol (Symbol.N start_nt));
+        fprintf f "  forall tree:Gram.parse_tree (%s) word output,\n" (print_symbol (Symbol.N start_nt));
         fprintf f "  match parse iterator (Parser.Inter.app_str word buffer_end) with\n";
         fprintf f "    | Parser.Inter.Fail_pr => False\n";
         fprintf f "    | Parser.Inter.Parsed_pr output_res buffer_end_res =>\n";
-        fprintf f "      output_res = output /\\ buffer_end_res = buffer_end\n";
-        fprintf f "    | Parser.Inter.Timeout_pr => True\n";
+        fprintf f "      output_res = output /\\ buffer_end_res = buffer_end  /\\\n";
+        fprintf f "      ge iterator (Gram.parse_tree_size tree+2)\n";
+        fprintf f "    | Parser.Inter.Timeout_pr => lt iterator (Gram.parse_tree_size tree+2)\n";
         fprintf f "  end.\n";
-        fprintf f "Proof. apply Parser.parse_complete; exact complete. Qed.\n";
+        fprintf f "Proof. apply Parser.parse_complete; exact complete. Qed.\n\n";
       end
 
   let write_all f =
-    List.iter (fun s -> fprintf f "%s\n\n" s.Stretch.stretch_content)
-      Front.grammar.UnparameterizedSyntax.preludes;
+    if not Settings.coq_no_actions then
+      List.iter (fun s -> fprintf f "%s\n\n" s.Stretch.stretch_content)
+        Front.grammar.UnparameterizedSyntax.preludes;
 
     fprintf f "Require Import List.\n";
     fprintf f "Require Import Syntax.\n";
@@ -448,7 +450,7 @@ module Run (T: sig end) = struct
     write_automaton f;
     write_theorems f;
 
-    List.iter (fprintf f "\n\n%s")
-      Front.grammar.UnparameterizedSyntax.postludes
-
+    if not Settings.coq_no_actions then
+      List.iter (fprintf f "\n\n%s")
+        Front.grammar.UnparameterizedSyntax.postludes
 end
