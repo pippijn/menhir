@@ -1,3 +1,15 @@
+2012/01/23:
+
+Fixed a bug whereby a %nonassoc declaration was not respected. This
+declaration requests that a shift/reduce conflict be reduced in favor of
+neither shifting nor reducing, that is, a syntax error must occur. However,
+due to an unforeseen interaction with the "default reduction" mechanism, this
+declaration was sometimes ignored and reduction would take place.
+
+2012/01/09:
+Changes in the (undocumented) Coq back-end so as to match the ESOP 2012
+paper.
+
 2011/10/19:
 The Makefile now tests whether Unix or Windows is used (the test is performed
 by evaluating Sys.os_type under ocaml) and changes a couple settings accordingly:

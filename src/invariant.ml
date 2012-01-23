@@ -833,28 +833,50 @@ let errorpeeker node =
    should in fact be none. The state that we reduce to will also have
    the same property, and so on, so we will in fact end up rewinding
    the entire stack and accepting the input when the stack becomes
-   empty. *)
+   empty.
+
+   (New as of 2012/01/23.) A state where a shift/reduce conflict was
+   solved in favor of neither (due to a use of the %nonassoc
+   directive) must not perform a default reduction. Indeed, this would
+   effectively mean that the failure that was requested by the user is
+   forgotten and replaced with a reduction. This surprising behavior
+   is present in ocamlyacc and was present in earlier versions of
+   Menhir. See e.g. http://caml.inria.fr/mantis/view.php?id=5462
+
+   There is a chance that we might run into trouble if the ideas
+   described in the above two paragraphs collide, that is, if we
+   forbid a default reduction (due to a shift/reduce conflict solved
+   by %nonassoc) in a node where we would like to have default
+   reduction on "#". This situation seems unlikely to arise, so I will
+   not do anything about it for the moment. (Furthermore, someone who
+   uses precedence declarations is looking for trouble anyway.)
+
+*)
 
 let (has_default_reduction : Lr1.node -> (Production.index * TerminalSet.t) option), hdrcount =
   Misc.tabulateo Lr1.number Lr1.fold Lr1.n (fun s ->
 
-    match ProductionMap.is_singleton (Lr1.invert (Lr1.reductions s)) with
-    | Some (_, toks)  as reduction
-      when SymbolMap.purelynonterminal (Lr1.transitions s) ->
-    
-	if TerminalSet.mem Terminal.sharp toks then
-	  (* Perform default reduction on "#". *)
-	  reduction
-	else if recoverer s then
-	  (* Do not perform default reduction. Allow error recovery. *)
-	  None
-	else
-	  (* Perform default reduction. *)
-	  reduction
+    if Lr1.forbid_default_reduction s then
+      None
+    else
 
-    | Some _
-    | None ->
-	None
+      match ProductionMap.is_singleton (Lr1.invert (Lr1.reductions s)) with
+      | Some (_, toks)  as reduction
+	  when SymbolMap.purelynonterminal (Lr1.transitions s) ->
+
+	if TerminalSet.mem Terminal.sharp toks then
+	    (* Perform default reduction on "#". *)
+	    reduction
+	  else if recoverer s then
+	    (* Do not perform default reduction. Allow error recovery. *)
+	    None
+	  else
+	    (* Perform default reduction. *)
+	    reduction
+
+      | Some _
+      | None ->
+	  None
 
   )
 

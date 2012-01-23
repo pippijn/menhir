@@ -72,6 +72,12 @@ val predecessors: node -> node list
 val transitions: node -> node SymbolMap.t
 val reductions: node -> Production.index list TerminalMap.t
 
+(* (New as of 2012/01/23.) This tells whether a shift/reduce conflict
+   in this node was solved in favor of neither (%nonassoc). This implies
+   that one must forbid a default reduction at this node. *)
+
+val forbid_default_reduction: node -> bool
+
 (* This inverts a mapping of tokens to productions into a mapping of
    productions to sets of tokens. *)
 
