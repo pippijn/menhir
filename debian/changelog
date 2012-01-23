@@ -1,3 +1,10 @@
+menhir (20120123.dfsg-1) unstable; urgency=low
+
+  * New upstream release
+    - fixes http://caml.inria.fr/mantis/view.php?id=5462
+
+ -- Mehdi Dogguy <mehdi@debian.org>  Mon, 23 Jan 2012 20:50:25 +0100
+
 menhir (20111019.dfsg-1) unstable; urgency=low
 
   * New upstream release (Closes: #583291).
