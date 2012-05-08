@@ -120,6 +120,8 @@ module type TABLES = sig
 
   exception Error
 
+  exception StateError of token * int
+
   (* The parser indicates whether to perform error recovery. *)
 
   val recovery: bool

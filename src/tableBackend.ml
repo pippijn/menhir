@@ -684,6 +684,7 @@ let application = {
       MStruct {
 	struct_excdefs = [
 	  excredef;
+	  exc2redef;
 	];
 	struct_typedefs = [
 	  tokendef2;
@@ -768,7 +769,7 @@ let program = {
     Front.grammar.UnparameterizedSyntax.preludes;
 
   excdefs =
-    [ excdef ];
+    [ excdef; exc2def ];
 
   typedefs =
     tokentypedef @
