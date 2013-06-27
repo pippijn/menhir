@@ -18,7 +18,9 @@
 
 val excname: string
 val excdef: IL.excdef
+val exc2def: IL.excdef
 val excredef: IL.excdef
+val exc2redef: IL.excdef
 
 (* The type of the entry point for the nonterminal start symbol
    [symbol]. *)

@@ -623,8 +623,8 @@ let structure f p =
     indent 2 (fun f p ->
       fprintf f "%t%a%a%a"
 	nl
-	excdefs p.struct_excdefs
 	typedefs p.struct_typedefs
+	excdefs p.struct_excdefs
 	nonrecvaldefs p.struct_nonrecvaldefs
     )
   ) p
@@ -643,8 +643,8 @@ let moduledef f d =
 
 let program f p =
   fprintf f "%a%a"
-    excdefs p.excdefs
-    typedefs p.typedefs;
+    typedefs p.typedefs
+    excdefs p.excdefs;
   List.iter (stretch false f) p.prologue;
   fprintf f "%a%a%a"
     nonrecvaldefs p.nonrecvaldefs
@@ -656,7 +656,7 @@ let valdecl f (x, ts) =
   fprintf f "val %s: %a" x typ ts.body
 
 let interface f i =
-  fprintf f "%a%a%a%!" excdefs i.excdecls typedefs i.typedecls (list valdecl nl) i.valdecls
+  fprintf f "%a%a%a%!" typedefs i.typedecls excdefs i.excdecls (list valdecl nl) i.valdecls
 
 let program p =
   functorparams false program p X.f p.paramdefs
