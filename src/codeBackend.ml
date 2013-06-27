@@ -1613,32 +1613,24 @@ let errorbody s =
 
     with Not_found ->
 
-      if not Settings.recovery then
-        ERaise (
-          EData (
-            "StateError",
-            [ERecordAccess (EVar env, ftoken); EVar (string_of_int (Lr1.number s))]
-          )
-        )
-      else
-        (* This state is unable to handle errors. Pop the stack to find
-           a state that does handle errors, a state that can further pop
-           the stack, or die. *)
+      (* This state is unable to handle errors. Pop the stack to find
+         a state that does handle errors, a state that can further pop
+	 the stack, or die. *)
 
-        match Invariant.rewind s with
-        | Invariant.Die ->
-            can_die := true;
-            ERaise errorval
-        | Invariant.DownTo (w, st) ->
-            let _, pat = Invariant.fold errorcellparams (0, PVar stack) w in
-            blet (
-              [ pat, EVar stack ],
-              match st with
-              | Invariant.Represented ->
-                  call_errorcase
-              | Invariant.UnRepresented s ->
-                  call_error magic s
-            )
+      match Invariant.rewind s with
+      | Invariant.Die ->
+	  can_die := true;
+          ERaise errorval
+      | Invariant.DownTo (w, st) ->
+	  let _, pat = Invariant.fold errorcellparams (0, PVar stack) w in
+	  blet (
+	    [ pat, EVar stack ],
+	    match st with
+	    | Invariant.Represented ->
+		call_errorcase
+	    | Invariant.UnRepresented s ->
+		call_error magic s
+          )
 
 (* This is the [error] function associated with state [s]. *)
 
@@ -1845,7 +1837,7 @@ let program = {
     Front.grammar.UnparameterizedSyntax.preludes;
 
   excdefs =
-    [ excdef; exc2def ];
+    [ excdef ];
 
   typedefs =
     tokentypedef @

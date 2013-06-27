@@ -95,7 +95,6 @@ module T = struct
 
   exception Accept of semantic_value
   exception Error
-  exception StateError of token * state
 
   type semantic_action =
       (state, semantic_value, token) env -> unit
@@ -274,6 +273,6 @@ let interpret log nt lexer lexbuf =
   try
     T.Log.log := log;
     Some (E.entry s lexer lexbuf)
-  with T.Error | T.StateError _ ->
+  with T.Error ->
     None
 

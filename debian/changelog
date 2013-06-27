@@ -1,0 +1,180 @@
+menhir (20120123.dfsg-1) unstable; urgency=low
+
+  * New upstream release
+    - fixes http://caml.inria.fr/mantis/view.php?id=5462
+
+ -- Mehdi Dogguy <mehdi@debian.org>  Mon, 23 Jan 2012 20:50:25 +0100
+
+menhir (20111019.dfsg-1) unstable; urgency=low
+
+  * New upstream release (Closes: #583291).
+  * Bump Standards-Version to 3.9.2, no changes needed.
+
+ -- Mehdi Dogguy <mehdi@debian.org>  Mon, 02 Jan 2012 18:05:48 +0100
+
+menhir (20110201.dfsg-1) unstable; urgency=low
+
+  [ Stéphane Glondu ]
+  * Do not install examples twice (Closes: #603335)
+
+  [ Mehdi Dogguy ]
+  * New upstream release.
+  * Set filter-pristine-tar to True in debian/gbp.conf.
+
+ -- Mehdi Dogguy <mehdi@debian.org>  Sat, 16 Apr 2011 00:12:54 +0200
+
+menhir (20090505.dfsg-2) unstable; urgency=low
+
+  * Use new features of dh-ocaml (0.9).
+  * Build-dep on ocaml >= 3.11.1-3~
+  * Use new address and remove DMUA
+  * Bump standards to 3.8.3
+  * Convert patches to quilt format and use quilt instead of dpatch
+
+ -- Mehdi Dogguy <mehdi@debian.org>  Wed, 23 Sep 2009 18:48:23 +0200
+
+menhir (20090505.dfsg-1) unstable; urgency=low
+
+  * New Upstream Version
+  * More verbose description for libmenhir-ocaml-dev, Closes: #518666.
+  * Move libmenhir-ocaml-dev to the new ocaml section.
+  * Drop src_Makefile.dpatch: integrated upstream.
+  * Build-dep on ocaml >= 3.11.1
+
+ -- Mehdi Dogguy <dogguy@pps.jussieu.fr>  Wed, 24 Jun 2009 23:04:37 +0200
+
+menhir (20090204.dfsg-2) unstable; urgency=low
+
+  * New binary package libmenhir-ocaml-dev, Closes: #516134.
+  * Use dh-ocaml predefined variables.
+  * Use predefined variable OCAML_BEST (dh-ocaml >= 0.4).
+  * debian/svn-deblayout: remove no longer needed SVN setting
+
+ -- Mehdi Dogguy <dogguy@pps.jussieu.fr>  Sun, 22 Feb 2009 23:41:17 +0100
+
+menhir (20090204.dfsg-1) experimental; urgency=low
+
+  * New Upstream Version
+  * Add dependency ${misc:Depends}, thanks zack.
+  * Update src_Makefile.dpatch
+  * Add DMUA flag with Sam's blessing. 
+  * PREFIX is set back to /usr in debian/rules
+
+ -- Mehdi Dogguy <dogguy@pps.jussieu.fr>  Thu, 19 Feb 2009 13:18:19 +0100
+
+menhir (20080912.dfsg-2) experimental; urgency=low
+
+  * Bump ocaml version to 3.11
+  * Add build-dependency on dh-ocaml
+  * Shorten debian/rules
+
+ -- Mehdi Dogguy <dogguy@pps.jussieu.fr>  Wed, 18 Feb 2009 16:23:09 +0100
+
+menhir (20080912.dfsg-1) experimental; urgency=low
+
+  [ Mehdi Dogguy ]
+  * New upstream release, (Closes: #500699).
+  * Add myself to uploaders and set d-o-m as maintainer.
+  * Bump standards version to 3.8.0, no changes needed.
+  * Change Vcs-* flags to point to git repository.
+  * Update debian/rules: All source files are now in src/
+  * Bump debhelper compat to 7 and shorten debian/rules
+  * Add src_Makefile.dpatch to not try to build cmx files on non-native
+    architectures.
+  * Add Homepage field to debian/control.
+  * Install menhirLib
+  * Remove ocamlfind from build-dependency: not used.
+
+  [ Samuel Mimram ]
+  * Mangle .dfsg in version in watch file.
+
+ -- Mehdi Dogguy <dogguy@pps.jussieu.fr>  Fri, 23 Jan 2009 12:43:54 +0100
+
+menhir (20071212.dfsg-1) unstable; urgency=low
+
+  * New upstream release.
+  * Updated standards version, no changes needed.
+
+ -- Samuel Mimram <smimram@debian.org>  Sat, 22 Dec 2007 00:46:17 +0100
+
+menhir (20071205.dfsg-1) unstable; urgency=low
+
+  * New upstream release.
+  * Tighten dependency on ocaml-nox.
+
+ -- Samuel Mimram <smimram@debian.org>  Tue, 11 Dec 2007 00:45:36 +0000
+
+menhir (20070520-2) unstable; urgency=low
+
+  * Rebuild with OCaml 3.10.
+
+ -- Samuel Mimram <smimram@debian.org>  Sat, 08 Sep 2007 01:30:14 +0200
+
+menhir (20070520-1) unstable; urgency=low
+
+  * New upstream release.
+
+ -- Samuel Mimram <smimram@debian.org>  Mon, 23 Jul 2007 14:25:32 +0200
+
+menhir (20070322.dfsg-4) unstable; urgency=low
+
+  * Correcly clean, closes: #424571.
+
+ -- Samuel Mimram <smimram@debian.org>  Tue, 22 May 2007 22:36:35 +0200
+
+menhir (20070322.dfsg-3) unstable; urgency=low
+
+  * Rebuild in bytecode when native compilation fails.
+
+ -- Samuel Mimram <smimram@debian.org>  Wed, 18 Apr 2007 12:51:43 +0200
+
+menhir (20070322.dfsg-2) unstable; urgency=low
+
+  * Uploading to unstable.
+
+ -- Samuel Mimram <smimram@debian.org>  Mon, 09 Apr 2007 17:53:02 +0200
+
+menhir (20070322.dfsg-1) experimental; urgency=low
+
+  * New upstream release.
+  * Menhir is now correctly bootstrapped, closes: #397467.
+
+ -- Samuel Mimram <smimram@debian.org>  Fri, 23 Mar 2007 00:14:31 +0100
+
+menhir (20070215.dfsg-1) experimental; urgency=low
+
+  * New upstream release.
+  * Removed bashism.dpatch, integrated upstream.
+  * Removed manpage, since it is now provided upstream.
+  * Updated standards version to 3.7.2, no changes needed.
+
+ -- Samuel Mimram <smimram@debian.org>  Wed, 28 Feb 2007 19:49:34 +0100
+
+menhir (20060615.dfsg-2) unstable; urgency=low
+
+  * Correctly set PREFIX when building, closes: #378260.
+  * Added bashim.dpatch to remove bashisms, closes: #377803.
+
+ -- Samuel Mimram <smimram@debian.org>  Tue, 11 Jul 2006 12:26:18 +0000
+
+menhir (20060615.dfsg-1) unstable; urgency=low
+
+  * Repackaged upstream's tarball to remove manual.pdf for which we don't have
+    the sources (yet).
+
+ -- Samuel Mimram <smimram@debian.org>  Sat,  8 Jul 2006 09:24:11 +0000
+
+menhir (20060615-1) unstable; urgency=low
+
+  * New upstream release.
+  * Removed makefile.dpatch, found a better way to use the makefile.
+  * Added manpage.dpatch to remove invalid characters from the manpage.
+  * Updated standards version to 3.7.2, no changes needed.
+
+ -- Samuel Mimram <smimram@debian.org>  Sat, 24 Jun 2006 19:06:02 +0000
+
+menhir (20060412-1) unstable; urgency=low
+
+  * Initial release, closes: #363539.
+
+ -- Samuel Mimram <smimram@debian.org>  Wed, 19 Apr 2006 19:11:20 +0200

@@ -245,7 +245,6 @@ module Make (T : TABLE) = struct
 
   and errorbookkeeping env =
     Log.initiating_error_handling();
-    env.errorstate <- Some (env.token, env.current);
     env.previouserror <- env.shifted;
     env.shifted <- (-1);
     error env
@@ -295,9 +294,7 @@ module Make (T : TABLE) = struct
 
       (* The stack is empty. Die. *)
 
-      match env.errorstate with
-      | None -> raise _eRR
-      | Some (token, state) -> raise (StateError (token, state))
+      raise _eRR
 
     else begin
 
@@ -349,7 +346,6 @@ module Make (T : TABLE) = struct
       previouserror = max_int;
       stack = empty;
       current = s;
-      errorstate = None;
     } in
 
     (* Run. Catch [Accept], which represents normal termination. Let [Error]

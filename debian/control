@@ -1,0 +1,51 @@
+Source: menhir
+Section: devel
+Priority: optional
+Maintainer: Debian OCaml Maintainers <debian-ocaml-maint@lists.debian.org>
+Uploaders:
+  Samuel Mimram <smimram@debian.org>,
+  Mehdi Dogguy <mehdi@debian.org>
+Build-Depends:
+  debhelper (>= 7.0.50),
+  quilt (>= 0.46-7),
+  ocaml-nox (>= 3.11.1-3~),
+  dh-ocaml (>= 0.9)
+Standards-Version: 3.9.2
+Homepage: http://gallium.inria.fr/~fpottier/menhir/
+Vcs-Git: git://git.debian.org/git/pkg-ocaml-maint/packages/menhir.git
+Vcs-Browser: http://git.debian.org/?p=pkg-ocaml-maint/packages/menhir.git
+
+Package: menhir
+Architecture: any
+Depends:
+  ${ocaml:Depends},
+  ${shlibs:Depends},
+  ${misc:Depends}
+Description: Parser generator for OCaml
+ Menhir is a LR(1) parser generator for OCaml. It is mostly compatible
+ with the standard ocamlyacc and has the following enhancements:
+  * it accepts LR(1) grammars,
+  * it offers parameterized nonterminal symbols as well as a library of
+    standard definitions,
+  * it explains conflicts in terms of the grammar,
+  * it allows grammar specifications to be split over multiple files and
+    parametrized by OCaml modules,
+  * it produces reentrant parsers.
+
+Package: libmenhir-ocaml-dev
+Section: ocaml
+Architecture: any
+Depends:
+  ${ocaml:Depends},
+  ${shlibs:Depends},
+  ${misc:Depends}
+Provides:
+  ${ocaml:Provides}
+Description: Menhir library for OCaml
+ This package contains the Menhir library for OCaml. It gives access to,
+ among others, the following modules:
+  * InfiniteArray: implements infinite arrays, that is, arrays
+    that grow transparently upon demand.
+  * RowDisplacement: compresses a two-dimensional table, where some
+    values are considered insignificant, via row displacement.
+  * Engine: LR parsing engine.

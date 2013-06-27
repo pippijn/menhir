@@ -1,0 +1,20 @@
+#!/bin/sh
+
+set -e
+
+CURDIR=`pwd`
+ORIG=$1
+WORKDIR=`dirname $ORIG`
+ORIGFILE=`basename $ORIG`
+VERSION=`echo "$ORIGFILE" | sed "s/^menhir-\([0-9\.]\+\)\.tar\.gz$/\1/"`
+
+cd $WORKDIR
+
+tar zxf $ORIGFILE
+
+rm -rf menhir-$VERSION/manual.pdf
+
+tar zcf menhir_$VERSION.dfsg.orig.tar.gz menhir-$VERSION/
+rm -rf menhir-$VERSION
+
+cd $CURDIR

@@ -31,20 +31,6 @@ let excredef = {
   excdef with exceq = Some excname
 }
 
-
-let exc2name =
-  "StateError"
-
-let exc2def = {
-  excname = exc2name ^ " of " ^ tctoken ^ " * int";
-  exceq = None;
-}
-
-let exc2redef = {
-  excname = exc2name;
-  exceq = Some exc2name;
-}
-
 (* The type of the entry point for the start symbol [symbol]. *)
 
 let entrytypescheme symbol =
@@ -65,7 +51,7 @@ let interface = {
     PreFront.grammar.parameters;
 
   excdecls =
-    [ excdef; exc2def ];
+    [ excdef ];
 
   typedecls =
     tokentypedef;

@@ -1,0 +1,20 @@
+#!/usr/bin/make -f
+# -*- makefile -*-
+
+export DH_VERBOSE=1
+
+include /usr/share/ocaml/ocamlvars.mk
+
+DESTDIR := $(CURDIR)/debian/menhir
+
+override_dh_auto_build:
+	$(MAKE) TARGET=$(OCAML_BEST) PREFIX=/usr
+
+override_dh_auto_clean:
+	$(MAKE) -C src/ clean PREFIX=$(DESTDIR)/usr
+
+override_dh_auto_install:
+	cp src/menhir.$(OCAML_BEST) $(DESTDIR)/usr/bin/menhir
+
+%:
+	dh --with quilt,ocaml $@

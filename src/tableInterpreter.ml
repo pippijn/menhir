@@ -109,9 +109,6 @@ module Make (T : TableFormat.TABLES)
   exception Error =
 	T.Error
 
-  exception StateError =
-	T.StateError
-
   type semantic_action =
       (state, semantic_value, token) EngineTypes.env -> unit
 	

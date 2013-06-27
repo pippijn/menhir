@@ -1,0 +1,2 @@
+src/menhirLib.*		@OCamlStdlibDir@/menhirLib/
+src/META		@OCamlStdlibDir@/menhirLib/
