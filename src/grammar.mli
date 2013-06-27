@@ -333,11 +333,12 @@ module Production : sig
 
   val print: index -> string
 
-  (* Tabulation of a Boolean function over nonterminals. [tabulate f]
+  (* Tabulation of a Boolean function over productions. [tabulateb f]
      returns a tabulated version of [f] as well as the number of
      productions where [f] is true. *)
 
-  val tabulate: (index -> bool) -> (index -> bool) * int
+  val tabulate: (index -> 'a) -> (index -> 'a)
+  val tabulateb: (index -> bool) -> (index -> bool) * int
 
 end
 

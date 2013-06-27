@@ -15,6 +15,7 @@
 (* Driver for the back-end. *)
 
 open UnparameterizedSyntax
+module I = Interpret (* artificial dependency; ensures that [Interpret] runs first *)
 
 (* Define an .ml file writer . *)
 

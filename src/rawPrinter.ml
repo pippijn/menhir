@@ -140,6 +140,8 @@ let rec expr e =
       node "unit" []
   | EIntConst k ->
       node "int" [ int k ]
+  | EMaxInt ->
+      node "max_int" []
   | EStringConst s ->
       node "string" [ string s ]
   | ETuple es ->

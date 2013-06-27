@@ -63,20 +63,3 @@ module KeywordSet :
 
   end with type elt = keyword
 
-(* (\* TEMPORARY These functions are replaced by the ones found  *)
-(*    in [Action]. *\) *)
-(* (\* These iterate over a list of keywords with positions, disregarding *)
-(*    the positions, and making sure that duplicate elements are not *)
-(*    presented. *\) *)
-
-(* val iter: (keyword -> unit) -> (keyword * 'a * 'b) list -> unit *)
-(* val fold: (keyword -> 'c -> 'c) -> (keyword * 'a * 'b) list -> 'c -> 'c *)
-
-(* (\* These tell whether a list of keywords with positions contains *)
-(*    a certain keyword. *\) *)
-  
-(* val has_previouserror: (keyword * 'a * 'b) list -> bool *)
-(* val has_syntaxerror: (keyword * 'a * 'b) list -> bool *)
-(* val has_leftstart: (keyword * 'a * 'b) list -> bool *)
-(* val has_leftend: (keyword * 'a * 'b) list -> bool *)
-(* val has_dollar: int -> (keyword * 'a * 'b) list -> bool *)

@@ -530,7 +530,7 @@ let runpushes s =
    if the top stack cell is in fact nonexistent. *)
 
 let (shiftreduce : Production.index -> bool), shiftreducecount =
-  Production.tabulate (fun prod ->
+  Production.tabulateb (fun prod ->
 
     (* Check that this production pops at least one stack cell. *)
 
@@ -1815,9 +1815,9 @@ let initenvdef =
 	      (ftoken, EVar token);
 	      (fstartp, ERecordAccess (EVar lexbuf, "Lexing.lex_start_p"));
 	      (fendp, ERecordAccess (EVar lexbuf, "Lexing.lex_curr_p"));
-	      (fshifted, EIntConst max_int)
+	      (fshifted, EMaxInt)
 	    ] @
-	    insertif previouserror_required (fpreviouserror, EIntConst max_int)
+	    insertif previouserror_required (fpreviouserror, EMaxInt)
 	    )
 	  )
 	),

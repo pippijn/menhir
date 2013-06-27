@@ -608,6 +608,9 @@ module Production = struct
   (* Tabulation. *)
 
   let tabulate f =
+    Misc.tabulate n f
+
+  let tabulateb f =
     Misc.tabulateb n f
 
   (* This array allows recording, on a production by production basis,
@@ -898,6 +901,16 @@ let follow : TerminalSet.t array Lazy.t =
 
     in
 
+    (* Iterate over all start symbols. *)
+    for nt = 0 to Nonterminal.start - 1 do
+      assert (Nonterminal.is_start nt);
+      (* Add # to FOLLOW(nt). *)
+      follow.(nt) <- TerminalSet.singleton Terminal.sharp
+    done;
+    (* We need to do this explicitly because our start productions are
+       of the form S' -> S, not S' -> S #, so # will not automatically
+       appear into FOLLOW(S) when the start productions are examined. *)
+
     (* Iterate over all productions. *)
     Array.iter (fun (nt1, rhs) ->
       (* Iterate over all nonterminal symbols [nt2] in the right-hand side. *)
@@ -952,6 +965,56 @@ let () =
       Printf.fprintf f "follow(%s) = %s\n"
 	(Nonterminal.print false nt)
 	(TerminalSet.print (follow nt))
+    done
+  )
+
+(* Compute FOLLOW sets for the terminal symbols as well. Again, unnecessary
+   for us, but requested by a user. This is done in a single pass over the
+   grammar -- no new fixpoint computation is required. *)
+
+let tfollow : TerminalSet.t array Lazy.t =
+  lazy (
+
+    let tfollow =
+      Array.make Terminal.n TerminalSet.empty
+    in
+
+    (* Iterate over all productions. *)
+    Array.iter (fun (nt1, rhs) ->
+      (* Iterate over all terminal symbols [t2] in the right-hand side. *)
+      Array.iteri (fun i symbol ->
+	match symbol with
+	| Symbol.N _ ->
+	    ()
+	| Symbol.T t2 ->
+	    let nullable, first = nullable_first_rhs rhs (i+1) in
+	    (* The FIRST set of the remainder of the right-hand side
+	       contributes to the FOLLOW set of [t2]. *)
+	    tfollow.(t2) <- TerminalSet.union first tfollow.(t2);
+	    (* If the remainder of the right-hand side is nullable,
+	       FOLLOW(nt1) contributes to FOLLOW(t2). *)
+	    if nullable then
+	      tfollow.(t2) <- TerminalSet.union (follow nt1) tfollow.(t2)
+      ) rhs
+    ) Production.table;
+
+    tfollow
+
+  )
+
+(* Define another accessor. *)
+
+let tfollow t =
+  (Lazy.force tfollow).(t)
+
+(* At log level 3, display the FOLLOW sets for terminal symbols. *)
+
+let () =
+  Error.logG 3 (fun f ->
+    for t = 0 to Terminal.n - 1 do
+      Printf.fprintf f "follow(%s) = %s\n"
+	(Terminal.print t)
+	(TerminalSet.print (tfollow t))
     done
   )
 

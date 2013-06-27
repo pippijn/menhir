@@ -88,53 +88,43 @@ let compress
     true
   end;
 
-  (* This turns a row-as-array into a row-as-sparse-list. *)
+  (* This turns a row-as-array into a row-as-sparse-list. The row is
+     accompanied by its index [i] and by its rank (the number of its
+     significant entries, that is, the length of the row-as-a-list. *)
 
-  let sparse (line : 'a array) : 'a row =
+  let sparse (i : int) (line : 'a array) : int * int * 'a row (* index, rank, row *) =
 
-    let rec loop (j : int) (row : 'a row) =
+    let rec loop (j : int) (rank : int) (row : 'a row) =
       if j < 0 then
-	row
+	i, rank, row
       else
 	let x = line.(j) in
-	loop
-	  (j - 1) 
-	  (if insignificant x then row else (j, x) :: row)
+	if insignificant x then
+	  loop (j - 1) rank row
+	else
+	  loop (j - 1) (1 + rank) ((j, x) :: row)
     in
 
-    loop (n - 1) []
+    loop (n - 1) 0 []
 
   in
 
-  (* Define the rank of a row as its number of significant entries. *)
+  (* Construct an array of all rows, together with their index and rank. *)
 
-  let rank (row : 'a row) : int =
-    List.length row
+  let rows : (int * int * 'a row) array = (* index, rank, row *)
+    Array.mapi sparse t
   in
 
-  (* Construct a list of all rows, together with their index and rank. *)
-
-  let rows : (int * int * 'a row) list = (* index, rank, row *)
-    Array.to_list (
-      Array.mapi (fun i line ->
-	let row = sparse line in
-	i, rank row, row
-      ) t
-    )
-  in
-
-  (* Sort this list by decreasing rank. This does not have any impact
+  (* Sort this array by decreasing rank. This does not have any impact
      on correctness, but reportedly improves compression. The
      intuitive idea is that rows with few significant elements are
      easy to fit, so they should be inserted last, after the problem
      has become quite constrained by fitting the heavier rows. This
      heuristic is attributed to Ziegler. *)
 
-  let rows =
-    List.sort (fun (_, rank1, _) (_, rank2, _) ->
-      compare rank2 rank1
-    ) rows
-  in
+  Array.fast_sort (fun (_, rank1, _) (_, rank2, _) ->
+    compare rank2 rank1
+  ) rows;
 
   (* Allocate a one-dimensional array of displacements. *)
 
@@ -230,16 +220,14 @@ let compress
 	write k row
   in
 
-  (* Iterate over the sorted list of rows. Fit and write each row at
+  (* Iterate over the sorted array of rows. Fit and write each row at
      the leftmost compatible offset. Update the displacement table. *)
 
-  let () =
-    List.iter (fun (i, _, row) ->
-      let k = fit row in (* if [row] has leading insignificant elements, then [k] can be negative *)
-      write k row;
-      displacement.(i) <- encode k
-    ) rows
-  in
+  Array.iter (fun (i, _, row) ->
+    let k = fit row in (* if [row] has leading insignificant elements, then [k] can be negative *)
+    write k row;
+    displacement.(i) <- encode k
+  ) rows;
 
   (* Return the compressed tables. *)
 

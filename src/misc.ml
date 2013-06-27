@@ -38,6 +38,10 @@ let rec mapd f = function
       let y1, y2 = f x in
       y1 :: y2 :: mapd f xs
 
+let tabulate n f =
+  let a = Array.init n f in
+  Array.get a
+
 let tabulateb n f =
   let a = Array.init n f in
   Array.get a,
@@ -45,20 +49,29 @@ let tabulateb n f =
     if element then count + 1 else count
   ) 0 a
 
-let tabulateo number fold n f =
-  let a = Array.create n None in
-  let c = ref 0 in
+let tabulatef number fold n dummy f =
+  let a = Array.create n dummy in
   let () = fold (fun () element ->
-    let image = f element in
-    a.(number element) <- image;
-    match image with
-    | Some _ ->
-	incr c
-    | None ->
-	()
+    a.(number element) <- f element
   ) () in
   let get element =
     a.(number element)
+  in
+  get
+
+let tabulateo number fold n f =
+  let c = ref 0 in
+  let get =
+    tabulatef number fold n None (fun element ->
+      let image = f element in
+      begin match image with
+      | Some _ ->
+	  incr c
+      | None ->
+	  ()
+      end;
+      image
+    )
   in
   get, !c
 
@@ -73,6 +86,12 @@ let rec truncate k xs =
 
 let truncate k xs =
   if List.length xs <= k then xs else truncate k xs
+
+let repeat k x =
+  let rec loop k x accu =
+    if k = 0 then accu else loop (k - 1) x (x :: accu)
+  in
+  loop k x []
 
 module IntSet = Set.Make (struct 
 			    type t = int

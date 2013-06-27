@@ -1,3 +1,27 @@
+2013/01/16:
+"menhir --depend" was broken since someone added new whitespace in the output
+of ocamldep. Fixed.
+
+2012/12/19:
+Fixed a compilation problem that would arise when a file produced
+by Menhir on a 64-bit platform was compiled by ocaml on a 32-bit
+platform.
+
+2012/08/25:
+Performance improvements in the computation of various information
+about the automaton (module [Invariant]). The improvements will be
+noticeable only for very large automata.
+
+2012/06/07:
+The option --log-grammar 3 (and above) now causes the FOLLOW sets for
+*terminal* symbols to be computed and displayed.
+
+2012/05/25:
+Added the flag --canonical, which causes Menhir to produce a canonical LR(1)
+automaton in the style of Knuth. This means that no merging of states takes
+place during the construction of the automaton, and that no default reductions
+are allowed.
+
 2012/01/23:
 
 Fixed a bug whereby a %nonassoc declaration was not respected. This

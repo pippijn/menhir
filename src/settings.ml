@@ -39,8 +39,18 @@ let codeonly m =
 let version =
   ref false
 
-let pager =
-  ref true
+type construction_mode =
+  | ModeCanonical     (* --canonical: canonical Knuth LR(1) automaton *)
+  | ModeInclusionOnly (* --no-pager : states are merged when there is an inclusion
+			              relationship, default reductions are used *)
+  | ModePager         (* normal mode: states are merged as per Pager's criterion,
+			              default reductions are used *)
+
+(* Note that --canonical overrides --no-pager. If both are specified, the result
+   is a canonical automaton. *)
+
+let construction_mode =
+  ref ModePager
 
 let explain =
   ref false
@@ -157,6 +167,7 @@ let suggestion =
 
 let options = Arg.align [
   "--base", Arg.Set_string base, "<basename> Specifies a base name for the output file(s)";
+  "--canonical", Arg.Unit (fun () -> construction_mode := ModeCanonical), " Construct a canonical Knuth LR(1) automaton";
   "--comment", Arg.Set comment, " Include comments in the generated code";
   "--coq", Arg.Set coq, " (undocumented)";
   "--coq-no-complete", Arg.Set coq_no_complete, " (undocumented)";
@@ -176,7 +187,7 @@ let options = Arg.align [
   "--log-grammar", Arg.Set_int logG, "<level> Log information about the grammar";
   "--no-code-inlining", Arg.Clear code_inlining, " (undocumented)";
   "--no-inline", Arg.Clear inline, " Ignore the %inline keyword.";
-  "--no-pager", Arg.Clear pager, " (undocumented)";
+  "--no-pager", Arg.Unit (fun () -> if !construction_mode = ModePager then construction_mode := ModeInclusionOnly), " (undocumented)";
   "--no-prefix", Arg.Set noprefix, " (undocumented)";
   "--no-stdlib", Arg.Set no_stdlib, " Do not load the standard library";
   "--ocamlc", Arg.Set_string ocamlc, "<command> Specifies how ocamlc should be invoked";
@@ -291,8 +302,8 @@ let filenames =
 let token_type_mode =
   !token_type_mode
 
-let pager =
-  !pager
+let construction_mode =
+  !construction_mode
 
 let explain =
   !explain

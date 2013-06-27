@@ -16,6 +16,7 @@
    if it is present. *)
 
 open Grammar
+module I = Invariant (* artificial dependency; ensures that [Invariant] runs first *)
 
 (* --------------------------------------------------------------------------- *)
 
@@ -183,3 +184,4 @@ let () =
     loop()
 
   end
+

@@ -292,7 +292,13 @@ let depend grammar =
       (* Make sense out of ocamldep's output. *)
 
       let lexbuf = Lexing.from_string output in
-      let lines : line list = Lexdep.main lexbuf in
+      let lines : line list =
+	try
+	  Lexdep.main lexbuf
+	with Lexdep.Error msg ->
+	  (* Echo the error message, followed with ocamldep's output. *)
+	  Error.error [] (msg ^ output)
+      in
 
       (* Look for the line that concerns the [.cmo] target, and echo a
 	 modified version of this line, where the [.cmo] target is

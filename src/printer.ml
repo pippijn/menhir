@@ -269,6 +269,7 @@ let rec member e k =
   | ERecord _
   | ERecordAccess (_, _)
   | EIntConst _
+  | EMaxInt
   | EStringConst _
   | EUnit
   | EArray _
@@ -363,6 +364,8 @@ and exprk k f e =
 	  fprintf f "%d" k
 	else
 	  fprintf f "(%d)" k
+    | EMaxInt ->
+        fprintf f "max_int"
     | EStringConst s ->
 	fprintf f "\"%s\"" (String.escaped s)
     | ETuple [] ->

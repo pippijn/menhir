@@ -49,11 +49,12 @@ let read_whole_file filename =
   close_in channel;
   Buffer.contents b
 
-let load_partial_grammar filename = 
-  if Filename.check_suffix filename (if Settings.coq then ".vy" else ".mly") then
+let load_partial_grammar filename =
+  let validExt = if Settings.coq then ".vy" else ".mly" in
+  if Filename.check_suffix filename validExt then
     Error.set_filename filename
   else
-    Error.error [] (sprintf "argument file names should end in .mly. \"%s\" is not accepted." filename);
+    Error.error [] (sprintf "argument file names should end in %s. \"%s\" is not accepted." validExt filename);
   try
 
     let contents = read_whole_file filename in

@@ -19,11 +19,14 @@
 
   open Lexing
 
+  exception Error of string
+
   let fail lexbuf =
-    Error.error []
+    raise (Error
       (Printf.sprintf
-	 "failed to make sense of ocamldep's output (character %d)."
+	 "failed to make sense of ocamldep's output (character %d).\n"
 	 lexbuf.lex_curr_p.pos_cnum)
+    )
 
 }
 
@@ -41,7 +44,7 @@ let entry = ((entrychar+ as basename) ".cm" ('i' | 'o' | 'x') as filename)
 rule main = parse
 | eof
     { [] }
-| entry ":"
+| entry whitespace* ":"
     { let bfs = collect [] lexbuf in
       ((basename, filename), bfs) :: main lexbuf }
 | _

@@ -13,6 +13,7 @@
 (**************************************************************************)
 
 open Grammar
+open Slr (* artificial dependency; ensures that [Slr] runs first *)
 
 (* This module constructs an LR(1) automaton by following Pager's method, that
    is, by merging states on the fly when they are weakly compatible. *)
@@ -81,6 +82,31 @@ module NodeSet =
 
 module NodeMap =
   Map.Make (Node)
+
+module ImperativeNodeMap = struct
+
+  type key =
+      NodeMap.key
+
+  type 'data t =
+      'data NodeMap.t ref
+
+  let create () =
+    ref NodeMap.empty
+
+  let clear t =
+    t := NodeMap.empty
+
+  let add k d t =
+    t := NodeMap.add k d !t
+
+  let find k t =
+    NodeMap.find k !t
+
+  let iter f t =
+    NodeMap.iter f !t
+
+end
 
 (* ------------------------------------------------------------------------ *)
 
@@ -287,36 +313,71 @@ let materialize (source : node) (symbol : Symbol.t) (target : Lr0.lr1state) : un
     assert (k < Lr0.n);
     let similar = map.(k) in
 
-    (* Check whether one of these states subsumes the candidate new state. If
-       so, there is no need to create a new node: just reuse the existing
-       one. *)
+    (* Check whether we need to create a new node or can reuse an existing
+       state. *)
 
-    (* 20110124: require error compatibility in addition to subsumption. *)
+    (* 20120525: the manner in which this check is performed depends on
+       [Settings.construction_mode]. There are now three modes. *)
 
-    List.iter (fun node ->
-      if Lr0.subsume target node.state &&
-         Lr0.error_compatible target node.state then
-	raise (Subsumed node)
-    ) similar;
+    begin match Settings.construction_mode with
+    | Settings.ModeCanonical ->
 
-    (* Check whether one of the existing states is compatible, in Pager's
-       sense, with the new state. If so, there is no need to create a new
-       state: just merge the new state into the existing one. *)
+        (* In a canonical automaton, two states can be merged only if they
+	   are identical. *)
 
-    (* 20110124: require error compatibility in addition to the existing
-       compatibility criteria. *)
+	List.iter (fun node ->
+	  if Lr0.subsume target node.state &&
+	     Lr0.subsume node.state target then
+	    raise (Subsumed node)
+	) similar
 
-    if Settings.pager then
-      List.iter (fun node ->
-	if Lr0.compatible target node.state &&
-	   Lr0.eos_compatible target node.state &&
-	   Lr0.error_compatible target node.state then
-	  raise (Compatible node)
-      ) similar;
+    | Settings.ModeInclusionOnly
+    | Settings.ModePager ->
 
-    (* Both of the above checks have failed. Create a new node. Two states
-       that are in the subsumption relation are also compatible. This implies
-       that the newly created node does not subsume any existing states. *)
+        (* A more aggressive approach is to take subsumption into account:
+	   if the new candidate state is a subset of an existing state,
+	   then no new node needs to be created. Furthermore, the existing
+	   state does not need to be enlarged. *)
+
+        (* 20110124: require error compatibility in addition to subsumption. *)
+
+	List.iter (fun node ->
+	  if Lr0.subsume target node.state &&
+	     Lr0.error_compatible target node.state then
+	    raise (Subsumed node)
+	) similar
+
+    end;
+
+    begin match Settings.construction_mode with
+    | Settings.ModeCanonical
+    | Settings.ModeInclusionOnly ->
+        ()
+
+    | Settings.ModePager ->
+
+      (* One can be even more aggressive and check whether the existing state is
+	 compatible, in Pager's sense, with the new state. If so, there is no
+	 need to create a new state: just merge the new state into the existing
+	 one. The result is a state that may be larger than each of the two
+	 states that have been merged. *)
+
+      (* 20110124: require error compatibility in addition to the existing
+	 compatibility criteria. *)
+
+      if Settings.construction_mode = Settings.ModePager then
+	List.iter (fun node ->
+	  if Lr0.compatible target node.state &&
+	     Lr0.eos_compatible target node.state &&
+	     Lr0.error_compatible target node.state then
+	    raise (Compatible node)
+	) similar
+
+    end;
+
+    (* The above checks have failed. Create a new node. Two states that are in
+       the subsumption relation are also compatible. This implies that the
+       newly created node does not subsume any existing states. *)
 
     source.transitions <- SymbolMap.add symbol (create target) source.transitions
 

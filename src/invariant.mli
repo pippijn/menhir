@@ -132,6 +132,7 @@ val fold_reduced: (Lr1.node -> 'a -> 'a) -> Production.index -> 'a -> 'a
 
 (* [has_default_reduction s] tells whether state [s] has a default reduction,
    and, if so, upon which set of tokens. *)
+
 val has_default_reduction : Lr1.node -> (Production.index * TerminalSet.t) option
 
 (* ------------------------------------------------------------------------- *)

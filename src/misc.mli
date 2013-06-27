@@ -28,6 +28,13 @@ val single: 'a list -> 'a
 
 val mapd: ('a -> 'b * 'b) -> 'a list -> 'b list
 
+(* Tabulating a function using an internal array. [tabulate n f]
+   returns a function that is extensionally equal to [f], but relies
+   on an internal array. Arguments to [f] are of type [int] and are
+   supposed to lie in the range [0..n). *)
+
+val tabulate: int -> (int -> 'a) -> (int -> 'a)
+
 (* Tabulating a function using an internal array. [tabulateb n f]
    returns a function that is extensionally equal to [f], but relies
    on an internal array. Arguments to [f] are of type [int] and are
@@ -36,6 +43,20 @@ val mapd: ('a -> 'b * 'b) -> 'a list -> 'b list
    of points where [f] is [true]. *)
 
 val tabulateb: int -> (int -> bool) -> (int -> bool) * int
+
+(* [tabulatef number fold n dummy f] returns a function that is extensionally
+   equal to [f], but relies on an internal array. Arguments to [f] are of type
+   ['a] and are mapped by [number] into the range [0..n). [fold] allows
+   folding over the domain of [f]. [dummy] is used to initialize the internal
+   array. Its value has no impact if [fold] is surjective. *)
+
+val tabulatef:
+  ('a -> int) ->
+  ((unit -> 'a -> unit) -> unit -> unit) ->
+  int ->
+  'b ->
+  ('a -> 'b) ->
+  ('a -> 'b)
 
 (* [tabulateo number fold n f] returns a function that is
    extensionally equal to [f], but relies on an internal
@@ -49,6 +70,10 @@ val tabulateo: ('a -> int) -> ((unit -> 'a -> unit) -> unit -> unit) -> int -> (
 (* Truncature of a list. *)
 
 val truncate: int -> 'a list -> 'a list
+
+(* A list of repeated elements. *)
+
+val repeat: int -> 'a ->  'a list
 
 (* Reverse function application. *)
 
