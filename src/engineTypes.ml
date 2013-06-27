@@ -97,6 +97,8 @@ type ('state, 'semantic_value, 'token) env = {
 
   mutable current: 'state;
 
+  mutable errorstate: ('token * 'state) option;
+
 }
 
 (* --------------------------------------------------------------------------- *)
@@ -244,6 +246,7 @@ module type TABLE = sig
 
   exception Accept of semantic_value
   exception Error
+  exception StateError of token * state
 
   type semantic_action =
       (state, semantic_value, token) env -> unit
@@ -321,6 +324,7 @@ module type ENGINE = sig
      raises [Error]. *)
 
   exception Error
+  exception StateError of token * state
 
   val entry:
     state ->
