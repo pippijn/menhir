@@ -322,6 +322,8 @@ rule main = parse
              justifiée et si certains choix comme le parenthésage et le
              traitement des keywords ne pourraient pas être effectués
              plus loin. *)
+| "\""
+    { tokenname (lexeme_start_p lexbuf) lexbuf; main lexbuf }
 | eof
     { EOF }
 | _
@@ -338,6 +340,16 @@ and comment openingpos = parse
     { error1 openingpos "unterminated comment." }
 | _
     { comment openingpos lexbuf }
+
+(* Skip readable token names. *)
+
+and tokenname openingpos = parse
+| "\""
+    { () }
+| eof | newline
+    { error1 openingpos "unterminated token name." }
+| _
+    { tokenname openingpos lexbuf }
 
 (* Collect an O'Caml type delimited by angle brackets. Angle brackets can
    appear as part of O'Caml function types. They might also appear as part
