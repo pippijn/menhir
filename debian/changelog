@@ -1,8 +1,9 @@
-menhir (20130116.dfsg-1) unstable; urgency=low
+menhir (20130116.1) precise; urgency=low
 
   * New upstream release
+  * Add StateError exception.
 
- -- Pippijn van Steenhoven <pip88nl@gmail.com>  Mon, 24 Jun 2013 18:20:46 +0200
+ -- Pippijn van Steenhoven <pippijn@xinutec.org>  Mon, 24 Jun 2013 18:20:46 +0200
 
 menhir (20120123.dfsg-1) unstable; urgency=low
 

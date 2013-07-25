@@ -1,0 +1,10 @@
+language: c
+script: dpkg-buildpackage -b -us -uc
+
+install:
+   - sudo apt-get install ocaml
+
+# whitelist
+branches:
+   only:
+      - master
