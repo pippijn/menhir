@@ -2,7 +2,7 @@ language: c
 script: dpkg-buildpackage -b -us -uc
 
 install:
-   - sudo apt-get install ocaml dh-ocaml quilt
+   - sudo apt-get install ocaml-nox dh-ocaml quilt
 
 # whitelist
 branches:
