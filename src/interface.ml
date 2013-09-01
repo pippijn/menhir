@@ -41,7 +41,8 @@ let exc2def = {
 }
 
 let exc2redef = {
-  exc2def with exceq = Some exc2name
+  excname = exc2name;
+  exceq = Some exc2name
 }
 
 (* The type of the entry point for the start symbol [symbol]. *)
