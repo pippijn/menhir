@@ -1,0 +1,7 @@
+*.cmx
+*.cmi
+*.cmo
+*.opt
+*.automaton
+*.output
+*.o

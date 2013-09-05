@@ -1,0 +1,13 @@
+/.depend
+/.versioncheck
+/installation.ml
+/lexdep.ml
+/lexer.ml
+/lexmli.ml
+/lineCount.ml
+/menhir
+/parser.ml
+/parser.mli
+/sentenceLexer.ml
+/sentenceParser.ml
+/sentenceParser.mli
