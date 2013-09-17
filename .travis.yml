@@ -2,7 +2,9 @@ language: c
 script: dpkg-buildpackage -b -us -uc
 
 install:
-   - sudo apt-get install ocaml-nox dh-ocaml quilt
+   # Package dependencies.
+   - sudo apt-get install devscripts equivs
+   - sudo mk-build-deps -ir
 
 # whitelist
 branches:
