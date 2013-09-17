@@ -24,7 +24,7 @@ let excname =
 
 let excdef = {
   excname = excname;
-  exceq = None;
+  exceq = (if Settings.fixedexc then Some "Parsing.Parse_error" else None);
 }
 
 let excredef = {

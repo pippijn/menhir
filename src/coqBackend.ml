@@ -40,11 +40,7 @@ module Run (T: sig end) = struct
 
   let is_final_state node =
     match Invariant.has_default_reduction node with
-      | Some (prod, _) ->
-	begin match Production.classify prod with
-	  | Some _ -> true
-	  | None -> false
-	end
+      | Some (prod, _) -> Production.is_start prod
       | None -> false
 
   let lr1_iter_nonfinal f =
@@ -387,8 +383,7 @@ module Run (T: sig end) = struct
           let first = ref true in
           Item.Map.iter (fun item lookaheads ->
             let prod, pos = Item.export item in
-	    match Production.classify prod with
-	      | None ->
+	    if Production.is_start prod then begin
 		if !first then first := false
 		else fprintf f ";\n    ";
 		fprintf f "{| prod_item := %s;\n" (print_prod prod);
@@ -405,7 +400,7 @@ module Run (T: sig end) = struct
 	          fprintf f "%s" (print_term lookahead)
 		) lookaheads;
 		fprintf f "] |}"
-	      | Some _ -> ()
+	    end
           )  (Lr0.closure (Lr0.export (Lr1.state node)));
           fprintf f " ].\n";
 	  fprintf f "Extract Inlined Constant items_of_state_%d => \"assert false\".\n\n" (Lr1.number node)
@@ -499,6 +494,7 @@ module Run (T: sig end) = struct
     fprintf f "Require Import Alphabet.\n";
     fprintf f "Require Grammar.\n";
     fprintf f "Require Automaton.\n\n";
+    fprintf f "Unset Elimination Schemes.\n\n";
     write_grammar f;
     write_automaton f;
     write_theorems f;

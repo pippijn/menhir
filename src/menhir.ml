@@ -12,17 +12,9 @@
 (*                                                                        *)
 (**************************************************************************)
 
-exception Error
+(* The main program. *)
 
-type token = 
-  | TIMES
-  | RPAREN
-  | PLUS
-  | MINUS
-  | LPAREN
-  | INT of (int)
-  | EOL
-  | DIV
+(* Everything is in [Back]. *)
 
+open Back
 
-val main: (Lexing.lexbuf -> token) -> Lexing.lexbuf -> (unit)

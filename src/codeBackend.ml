@@ -805,7 +805,7 @@ let letunless e x e1 e2 =
   EMatch (
     ETry (
       EData ("Some", [ e ]),
-      [ { branchpat = PData (excname, []); branchbody = EData ("None", []) } ]
+      [ { branchpat = PData (excdef.excname, []); branchbody = EData ("None", []) } ]
     ),
     [ { branchpat = PData ("Some", [ PVar x ]); branchbody = e1 };
       { branchpat = PData ("None", []); branchbody = e2 } ]
@@ -1436,8 +1436,7 @@ let reducebody prod =
      [goto] function, unless the semantic action raises [Error], in
      which case we transfer control to [errorcase]. *)
 
-  match Production.classify prod with
-  | Some nt ->
+  if Production.is_start prod then
 
       tracecomment
         "Accepting"
@@ -1446,31 +1445,31 @@ let reducebody prod =
 	  EMagic (EVar ids.(0))
 	))
 
-  | None ->
+  else
 
-      let action =
-	Production.action prod
-      in
-      let act =
-	EAnnot (Action.to_il_expr action, type2scheme (semvtypent nt))
-      in
+    let action =
+      Production.action prod
+    in
+    let act =
+      EAnnot (Action.to_il_expr action, type2scheme (semvtypent nt))
+    in
 
-      tracecomment
-        (Printf.sprintf "Reducing production %s" (Production.print prod))
-        (blet (
-	  (pat, EVar stack) ::
-	  unitbindings @
-	  posbindings action @
-	  extrabindings fpreviouserror action,
+    tracecomment
+      (Printf.sprintf "Reducing production %s" (Production.print prod))
+      (blet (
+	(pat, EVar stack) ::
+	unitbindings @
+	posbindings action @
+	extrabindings fpreviouserror action,
 
-	  (* If the semantic action is susceptible of raising [Error],
-	     use a [let/unless] construct, otherwise use [let]. *)
+	(* If the semantic action is susceptible of raising [Error],
+	   use a [let/unless] construct, otherwise use [let]. *)
 
-	  if Action.has_syntaxerror action then
-	    letunless act semv (call_goto nt) (errorbookkeeping call_errorcase)
-	  else
-	    blet ([ PVar semv, act ], call_goto nt)
-	))
+	if Action.has_syntaxerror action then
+	  letunless act semv (call_goto nt) (errorbookkeeping call_errorcase)
+	else
+	  blet ([ PVar semv, act ], call_goto nt)
+      ))
 
 (* This is the definition of the [reduce] function associated with
    production [prod]. *)

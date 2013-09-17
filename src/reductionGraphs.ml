@@ -90,31 +90,29 @@ let make_reduction_graph tok =
       List.iter (fun prod ->
 	(* If this is a start production, ignore it. We are not interested in
 	   accept actions, only in true reduce actions. *)
-	match Production.classify prod with
-	| Some _ ->
-	    ()
-	| None ->
-	    (* Find out how many cells are popped. *)
-	    let decrease = Production.length prod in
-	    (* Find out what states we might be in after popping. *)
-	    let states = pop_stack decrease (Lr1.NodeSet.singleton node) stack in
-	    (* Now, the goto step pushes one cell... *)
-	    let increase = 1 in
-	    let net = decrease - increase in
-	    (* Find out which states we might be in after the goto step. *)
-	    let symbol = Symbol.N (Production.nt prod) in
-	    let goto (state : Lr1.node) : Lr1.node =
-	      try
-		SymbolMap.find symbol (Lr1.transitions state)
-	      with Not_found ->
-		(* the invariant is too weak to ensure that goto is possible! *)
-		assert false
-	    in
-	    (* There is a transition, labelled [decrease - increase], from [node]
-	       to every state in the image through [goto] of the set [states]. *)
-	    Lr1.NodeSet.iter (fun state ->
-	      action net (goto state)
-	    ) states
+	if not (Production.is_start prod) then begin
+	  (* Find out how many cells are popped. *)
+	  let decrease = Production.length prod in
+	  (* Find out what states we might be in after popping. *)
+	  let states = pop_stack decrease (Lr1.NodeSet.singleton node) stack in
+	  (* Now, the goto step pushes one cell... *)
+	  let increase = 1 in
+	  let net = decrease - increase in
+	  (* Find out which states we might be in after the goto step. *)
+	  let symbol = Symbol.N (Production.nt prod) in
+	  let goto (state : Lr1.node) : Lr1.node =
+	    try
+	      SymbolMap.find symbol (Lr1.transitions state)
+	    with Not_found ->
+	      (* the invariant is too weak to ensure that goto is possible! *)
+	      assert false
+	  in
+	  (* There is a transition, labelled [decrease - increase], from [node]
+	     to every state in the image through [goto] of the set [states]. *)
+	  Lr1.NodeSet.iter (fun state ->
+	    action net (goto state)
+	  ) states
+	end
       ) prods
 
     let iter =

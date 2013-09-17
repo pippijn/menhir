@@ -5,16 +5,27 @@ export DH_VERBOSE=1
 
 include /usr/share/ocaml/ocamlvars.mk
 
+ifeq ($(OCAML_BEST),opt)
+OCAML_BEST := native
+endif
+
 DESTDIR := $(CURDIR)/debian/menhir
+
+OCAMLFIND_DESTDIR = $(DESTDIR)/$(OCAML_STDLIB_DIR)
+export OCAMLFIND_DESTDIR
 
 override_dh_auto_build:
 	$(MAKE) TARGET=$(OCAML_BEST) PREFIX=/usr
+
+override_dh_auto_test:
+	@echo "No tests defined"
 
 override_dh_auto_clean:
 	$(MAKE) -C src/ clean PREFIX=$(DESTDIR)/usr
 
 override_dh_auto_install:
-	cp src/menhir.$(OCAML_BEST) $(DESTDIR)/usr/bin/menhir
+	mkdir -p $(OCAMLFIND_DESTDIR)
+	$(MAKE) TARGET=$(OCAML_BEST) PREFIX=$(DESTDIR)/usr install
 
 %:
 	dh --with quilt,ocaml $@

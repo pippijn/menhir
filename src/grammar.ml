@@ -169,8 +169,9 @@ module Terminal = struct
   (* Determine how many terminals we have and build mappings
      both ways between names and indices. A new terminal "#"
      is created. A new terminal "error" is created. The fact
-     that the integer code assigned to the "error" pseudo-terminal
+     that the integer code assigned to the "#" pseudo-terminal
      is the last one is exploited in the table-based back-end.
+     (The right-most row of the action table is not created.)
 
      Pseudo-tokens (used in %prec declarations, but never
      declared using %token) are filtered out. *)

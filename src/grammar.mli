@@ -327,6 +327,11 @@ module Production : sig
 
   val classify: index -> Nonterminal.t option
 
+  (* [is_start] is easier to use than [classify] when the start symbol
+     is not needed. *)
+
+  val is_start: index -> bool
+
   (* This produces a string representation of a production. It should
      never be applied to a start production, as we do not wish users
      to become aware of the existence of these extra productions. *)
