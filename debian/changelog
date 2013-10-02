@@ -1,3 +1,9 @@
+menhir (20130911.2) precise; urgency=low
+
+  * Fix debian installation.
+
+ -- Pippijn van Steenhoven <pip88nl@gmail.com>  Wed, 02 Oct 2013 08:41:57 +0200
+
 menhir (20130911.1) precise; urgency=low
 
   * New upstream release
