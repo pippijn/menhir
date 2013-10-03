@@ -1,2 +1,3 @@
+src/_stage2/menhirLib.*	@OCamlStdlibDir@/menhirLib/
 src/menhirLib.*		@OCamlStdlibDir@/menhirLib/
 src/META		@OCamlStdlibDir@/menhirLib/

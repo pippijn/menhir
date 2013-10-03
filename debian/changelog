@@ -1,4 +1,4 @@
-menhir (20130911.2) precise; urgency=low
+menhir (20130911.3) precise; urgency=low
 
   * Fix debian installation.
 
